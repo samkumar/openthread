@@ -1,3 +1,3 @@
-MODULE := mbedtls_lib
+MODULE := openthread_core_mac
 
 include $(RIOTBASE)/Makefile.base

@@ -1,3 +1,3 @@
-MODULE := mbedtls_lib
+MODULE := mbedtls
 
 include $(RIOTBASE)/Makefile.base
