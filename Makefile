@@ -14,4 +14,9 @@ ifneq (,$(filter openthread_core,$(USEMODULE)))
  DIRS += src/cli
 endif
 
+ifneq (,$(filter openthread_ncp,$(USEMODULE)))
+ DIRS += src/ncp
+endif
+
+
 include $(RIOTBASE)/Makefile.base
