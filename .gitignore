@@ -25,11 +25,9 @@ doc/Doxyfile
 doc/html
 etc/visual-studio/BundleArtifacts
 etc/visual-studio/Generated Files
-include/openthread-config.h
 include/openthread-config.h.in
 include/stamp-h1
 ipch
 libtool
-Makefile
 Makefile.in
 output
