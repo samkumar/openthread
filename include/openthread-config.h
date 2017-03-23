@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#define OPENTHREAD_EXAMPLES RIOT
+
 /* Define to 1 if you want to use DTLS (commisioning) */
 #define OPENTHREAD_ENABLE_DTLS 1
 
