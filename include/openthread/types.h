@@ -61,8 +61,8 @@ extern "C" {
 #define CONTAINING_RECORD(address, type, field) \
     ((type *)((uint8_t*)(address) - offsetof(type, field)))
 #pragma GCC diagnostic pop*/
-#define BASE 0x1
-#define myoffsetof(s,m) (((size_t)&(((s*)BASE)->m))-BASE)
+#define BASEBASE 0X1
+#define myoffsetof(s,m) (((size_t)&(((s*)BASEBASE)->m))-BASEBASE)
 #define CONTAINING_RECORD(address, type, field) \
     ((type *)((uint8_t*)(address) - myoffsetof(type, field)))
 #endif /* CONTAINING_RECORD */

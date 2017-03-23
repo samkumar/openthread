@@ -31,6 +31,7 @@
  *   This file implements the CLI interpreter Instance related functions.
  */
 
+#ifdef OTDLL /* This file is needed for OTDLL only */
 #ifdef OPENTHREAD_CONFIG_FILE
 #include OPENTHREAD_CONFIG_FILE
 #else
@@ -124,3 +125,4 @@ exit:
 
 }  // namespace Cli
 }  // namespace Thread
+#endif
