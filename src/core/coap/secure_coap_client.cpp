@@ -26,6 +26,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if OPENTHREAD_ENABLE_DTLS
 #define WPP_NAME "secure_coap_client.tmh"
 
 #include <coap/secure_coap_client.hpp>
@@ -242,3 +243,5 @@ exit:
 
 }  // namespace Coap
 }  // namespace Thread
+
+#endif

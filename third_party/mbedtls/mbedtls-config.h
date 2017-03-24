@@ -764,7 +764,6 @@ __inline int windows_kernel_snprintf(char * s, size_t n, const char * format, ..
  *      MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
  */
 #define MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
-
 /**
  * \def MBEDTLS_PK_PARSE_EC_EXTENDED
  *

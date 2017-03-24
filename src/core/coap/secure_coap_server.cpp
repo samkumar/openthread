@@ -25,7 +25,7 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-
+#if OPENTHREAD_ENABLE_DTLS
 #define WPP_NAME "secure_coap_server.tmh"
 
 #include <coap/secure_coap_server.hpp>
@@ -245,3 +245,4 @@ exit:
 
 }  // namespace Coap
 }  // namespace Thread
+#endif

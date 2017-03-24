@@ -31,6 +31,7 @@
  *   This file implements blacklist IEEE 802.15.4 frame filtering based on MAC address.
  */
 
+#if OPENTHREAD_ENABLE_RAW_LINK_API
 #include <common/debug.hpp>
 #include <common/logging.hpp>
 #include "openthread/platform/random.h"
@@ -597,3 +598,4 @@ void LinkRaw::HandleEnergyScanTask(void)
 #endif // OPENTHREAD_CONFIG_ENABLE_SOFTWARE_ENERGY_SCAN
 
 } // namespace Thread
+#endif

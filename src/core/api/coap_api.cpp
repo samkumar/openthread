@@ -30,7 +30,7 @@
  * @file
  *   This file implements the OpenThread CoAP API.
  */
-
+#if OPENTHREAD_ENABLE_APPLICATION_COAP
 #include "openthread/coap.h"
 
 #include "openthread-instance.h"
@@ -172,3 +172,4 @@ ThreadError otCoapSendResponse(otInstance *aInstance, otMessage *aMessage, const
 }
 
 }  // extern "C"
+#endif

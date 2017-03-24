@@ -31,6 +31,7 @@
  *   This file implements the Energy Scan Client.
  */
 
+#if OPENTHREAD_ENABLE_COMMISSIONER
 #define WPP_NAME "energy_scan_client.tmh"
 
 #include "openthread/platform/random.h"
@@ -172,3 +173,4 @@ exit:
 }
 
 }  // namespace Thread
+#endif

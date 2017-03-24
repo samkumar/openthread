@@ -31,6 +31,7 @@
  *   This file implements the PAN ID Query Client.
  */
 
+#if OPENTHREAD_ENABLE_COMMISSIONER
 #define WPP_NAME "panid_query_client.tmh"
 
 #include "openthread/platform/random.h"
@@ -151,3 +152,4 @@ exit:
 }
 
 }  // namespace Thread
+#endif

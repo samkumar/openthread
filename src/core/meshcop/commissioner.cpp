@@ -31,6 +31,7 @@
  *   This file implements a Commissioner role.
  */
 
+#if OPENTHREAD_ENABLE_COMMISSIONER
 #define WPP_NAME "commissioner.tmh"
 
 #ifdef OPENTHREAD_CONFIG_FILE
@@ -1044,3 +1045,4 @@ exit:
 
 }  // namespace MeshCoP
 }  // namespace Thread
+#endif
