@@ -2472,6 +2472,7 @@ exit:
     return kThreadError_None;
 }
 
+
 ThreadError MleRouter::HandleDiscoveryRequest(const Message &aMessage, const Ip6::MessageInfo &aMessageInfo)
 {
     ThreadError error = kThreadError_None;

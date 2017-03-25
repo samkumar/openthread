@@ -30,7 +30,7 @@
  * @file
  *   This file implements the Joiner role.
  */
-
+#if OPENTHREAD_ENABLE_JOINER
 #define WPP_NAME "joiner.tmh"
 
 #ifdef OPENTHREAD_CONFIG_FILE
@@ -519,3 +519,4 @@ void Joiner::HandleTimer(void)
 
 }  // namespace MeshCoP
 }  // namespace Thread
+#endif

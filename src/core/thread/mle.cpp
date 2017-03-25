@@ -2003,6 +2003,7 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
 
         switch (header.GetCommand())
         {
+
         case Header::kCommandDiscoveryRequest:
             mNetif.GetMle().HandleDiscoveryRequest(aMessage, aMessageInfo);
             break;

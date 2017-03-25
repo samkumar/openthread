@@ -67,7 +67,9 @@ ThreadError AnnounceBeginClient::SendRequest(uint32_t aChannelMask, uint8_t aCou
 {
     ThreadError error = kThreadError_None;
     Coap::Header header;
+#if OPENTHREAD_ENABLE_COMMISSIONER
     MeshCoP::CommissionerSessionIdTlv sessionId;
+#endif
     MeshCoP::ChannelMask0Tlv channelMask;
     MeshCoP::CountTlv count;
     MeshCoP::PeriodTlv period;
@@ -83,9 +85,11 @@ ThreadError AnnounceBeginClient::SendRequest(uint32_t aChannelMask, uint8_t aCou
 
     VerifyOrExit((message = mNetif.GetCoapClient().NewMeshCoPMessage(header)) != NULL, error = kThreadError_NoBufs);
 
+#if OPENTHREAD_ENABLE_COMMISSIONER
     sessionId.Init();
     sessionId.SetCommissionerSessionId(mNetif.GetCommissioner().GetSessionId());
     SuccessOrExit(error = message->Append(&sessionId, sizeof(sessionId)));
+#endif
 
     channelMask.Init();
     channelMask.SetMask(aChannelMask);

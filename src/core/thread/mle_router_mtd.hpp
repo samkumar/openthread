@@ -162,7 +162,6 @@ private:
     ThreadError HandleDataRequest(const Message &, const Ip6::MessageInfo &) { return kThreadError_Drop; }
     ThreadError HandleNetworkDataUpdateRouter(void) { return kThreadError_None; }
     ThreadError HandleDiscoveryRequest(const Message &, const Ip6::MessageInfo &) { return kThreadError_Drop; }
-
     void StopAdvertiseTimer(void) { }
     ThreadError ProcessRouteTlv(const RouteTlv &aRoute) { (void)aRoute; return kThreadError_None; }
 };
