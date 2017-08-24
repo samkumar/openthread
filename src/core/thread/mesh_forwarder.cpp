@@ -53,6 +53,8 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -346,7 +348,6 @@ otError MeshForwarder::SendMessage(Message &aMessage)
         Ip6::Header ip6Header;
 
         aMessage.Read(0, sizeof(ip6Header), &ip6Header);
-
         if (!memcmp(&ip6Header.GetDestination(), mNetif.GetMle().GetLinkLocalAllThreadNodesAddress(),
                     sizeof(ip6Header.GetDestination())) ||
             !memcmp(&ip6Header.GetDestination(), mNetif.GetMle().GetRealmLocalAllThreadNodesAddress(),
@@ -393,7 +394,6 @@ otError MeshForwarder::SendMessage(Message &aMessage)
         Lowpan::MeshHeader meshHeader;
 
         IgnoreReturnValue(meshHeader.Init(aMessage));
-
         if ((neighbor = mNetif.GetMle().GetNeighbor(meshHeader.GetDestination())) != NULL &&
             !neighbor->IsRxOnWhenIdle())
         {
@@ -480,6 +480,9 @@ Message *MeshForwarder::GetDirectTransmission(void)
         switch (curMessage->GetType())
         {
         case Message::kTypeIp6:
+#if ENABLE_DEBUG
+            printf("[OT-MeshForwarder]: Tx IPv6 msg ");
+#endif
             error = UpdateIp6Route(*curMessage);
 
             if (curMessage->GetSubType() == Message::kSubTypeMleDiscoverRequest)
@@ -490,10 +493,16 @@ Message *MeshForwarder::GetDirectTransmission(void)
             break;
 
         case Message::kType6lowpan:
+#if ENABLE_DEBUG
+            printf("[OT-MeshForwarder]: Tx 6LoWPAN msg\n");
+#endif
             error = UpdateMeshRoute(*curMessage);
             break;
 
         case Message::kTypeMacDataPoll:
+#if ENABLE_DEBUG
+            printf("[OT-MeshForwarder]: Tx Data poll msg\n");
+#endif
             ExitNow();
 
         case Message::kTypeSupervision:
@@ -675,6 +684,21 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
     aMessage.Read(0, sizeof(ip6Header), &ip6Header);
 
+#if ENABLE_DEBUG
+    uint16_t addr[8];
+    printf("to Dest ");
+    for (int i=0; i<8; i++) {
+        addr[i] = ip6Header.GetDestination().mFields.m16[i];
+        if (addr[i] != 0) {
+            printf("%4x", HostSwap16(addr[i]));
+        }
+        if (i < 7) {
+            printf(":");
+        }
+    }
+    printf("\n");
+#endif
+
     switch (mNetif.GetMle().GetRole())
     {
     case OT_DEVICE_ROLE_DISABLED:
@@ -696,6 +720,9 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     case OT_DEVICE_ROLE_LEADER:
         if (mNetif.GetMle().IsMinimalEndDevice())
         {
+#if ENABLE_DEBUG
+            printf("     -- from Leaf ");
+#endif
             if (aMessage.IsLinkSecurityEnabled())
             {
                 mMacDest.mLength = sizeof(mMacDest.mShortAddress);
@@ -710,14 +737,23 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
                 }
 
                 GetMacSourceAddress(ip6Header.GetSource(), mMacSource);
+#if ENABLE_DEBUG
+                printf("to %4x\n", mMacDest.mShortAddress);
+#endif
             }
             else if (ip6Header.GetDestination().IsLinkLocal() || ip6Header.GetDestination().IsLinkLocalMulticast())
             {
                 GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
                 GetMacSourceAddress(ip6Header.GetSource(), mMacSource);
+#if ENABLE_DEBUG
+                printf("to LinkLocal/Multicast\n");
+#endif
             }
             else
             {
+#if ENABLE_DEBUG
+                printf("ERROR\n");
+#endif
                 ExitNow(error = OT_ERROR_DROP);
             }
         }
@@ -728,9 +764,14 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
             uint16_t rloc16;
             uint16_t aloc16;
             Neighbor *neighbor;
-
+#if ENABLE_DEBUG
+            printf("     -- from Router ");
+#endif
             if (ip6Header.GetDestination().IsLinkLocal() || ip6Header.GetDestination().IsMulticast())
             {
+#if ENABLE_DEBUG
+                printf("to LinkLocal/Multicast\n");
+#endif
                 GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
                 GetMacSourceAddress(ip6Header.GetSource(), mMacSource);
             }
@@ -742,11 +783,16 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
                     VerifyOrExit(mNetif.GetMle().IsRouterIdValid(mNetif.GetMle().GetRouterId(rloc16)),
                                  error = OT_ERROR_DROP);
                     mMeshDest = rloc16;
+#if ENABLE_DEBUG
+                    printf("to a routing locator\n");
+#endif
                 }
                 else if (mNetif.GetMle().IsAnycastLocator(ip6Header.GetDestination()))
                 {
                     aloc16 = HostSwap16(ip6Header.GetDestination().mFields.m16[7]);
-
+#if ENABLE_DEBUG
+                    printf("to an anycast locator\n");
+#endif
                     if (aloc16 == Mle::kAloc16Leader)
                     {
                         mMeshDest = mNetif.GetMle().GetRloc16(mNetif.GetMle().GetLeaderId());
@@ -787,13 +833,22 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
                 else if ((neighbor = mNetif.GetMle().GetNeighbor(ip6Header.GetDestination())) != NULL)
                 {
                     mMeshDest = neighbor->GetRloc16();
+#if ENABLE_DEBUG
+                    printf("to a neighbor\n");
+#endif
                 }
                 else if (mNetif.GetNetworkDataLeader().IsOnMesh(ip6Header.GetDestination()))
                 {
+#if ENABLE_DEBUG
+                    printf("to a mesh node\n");
+#endif
                     SuccessOrExit(error = mNetif.GetAddressResolver().Resolve(ip6Header.GetDestination(), mMeshDest));
                 }
                 else
                 {
+#if ENABLE_DEBUG                    
+                    printf("to an external node\n");
+#endif
                     mNetif.GetNetworkDataLeader().RouteLookup(
                         ip6Header.GetSource(),
                         ip6Header.GetDestination(),
@@ -810,6 +865,9 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
                     mMacDest.mLength = sizeof(mMacDest.mShortAddress);
                     mMacDest.mShortAddress = mMeshDest;
                     GetMacSourceAddress(ip6Header.GetSource(), mMacSource);
+#if ENABLE_DEBUG
+                    printf("     -- %4x (FinalDest)\n", mMacDest.mShortAddress);
+#endif
                 }
                 else
                 {
@@ -823,6 +881,9 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
                     mMacSource.mLength = sizeof(mMacSource.mShortAddress);
                     mMacSource.mShortAddress = mMeshSource;
                     mAddMeshHeader = true;
+#if ENABLE_DEBUG
+                    printf("    -- %4x (Intermediate)\n", mMacDest.mShortAddress);
+#endif
                 }
             }
         }
@@ -2144,6 +2205,9 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const Thre
     mScheduleTransmissionTask.Post();
 
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d", child->GetRloc16(), indirectMsgCount);
+#if ENABLE_DEBUG
+    printf("[OT-MeshForward]: Rx Data Poll, src:0x%04x, qed_msgs:%d\n", child->GetRloc16(), indirectMsgCount);
+#endif
 
 exit:
     return;
@@ -2284,4 +2348,4 @@ void MeshForwarder::LogIp6Message(MessageAction, const Message &, const Mac::Add
 
 #endif //#if OPENTHREAD_CONFIG_LOG_LEVEL >= OT_LOG_LEVEL_INFO
 
-}  // namespace ot
+}  // namespace ot/home/hskim/Desktop/RIOT-OS/pkg/openthread/source/src/core/thread/mesh_forwarder.cpp

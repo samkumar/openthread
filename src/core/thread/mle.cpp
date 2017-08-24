@@ -55,6 +55,8 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -64,7 +66,9 @@ Mle::Mle(ThreadNetif &aThreadNetif) :
     mNetif(aThreadNetif),
     mRetrieveNewNetworkData(false),
     mRole(OT_DEVICE_ROLE_DISABLED),
-    mDeviceMode(ModeTlv::kModeRxOnWhenIdle | ModeTlv::kModeSecureDataRequest),
+    /* hskim: We want leaf node to sleep */
+    mDeviceMode(ModeTlv::kModeSecureDataRequest), 
+    //mDeviceMode(ModeTlv::kModeRxOnWhenIdle | ModeTlv::kModeSecureDataRequest),
     isAssignLinkQuality(false),
     mAssignLinkQuality(0),
     mAssignLinkMargin(0),
@@ -181,6 +185,9 @@ otInstance *Mle::GetInstance(void)
 
 otError Mle::Enable(void)
 {
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Enabled\n");
+#endif
     otError error = OT_ERROR_NONE;
     Ip6::SockAddr sockaddr;
 
@@ -206,6 +213,9 @@ exit:
 
 otError Mle::Start(bool aEnableReattach, bool aAnnounceAttach)
 {
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Start\n");
+#endif
     otError error = OT_ERROR_NONE;
 
     otLogFuncEntry();
@@ -250,6 +260,9 @@ exit:
 
 otError Mle::Stop(bool aClearNetworkDatasets)
 {
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Stop\n");
+#endif
     otLogFuncEntry();
     mNetif.GetKeyManager().Stop();
     SetStateDetached();
@@ -273,6 +286,9 @@ otError Mle::Stop(bool aClearNetworkDatasets)
 
 otError Mle::Restore(void)
 {
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Restore\n");
+#endif
     otError error = OT_ERROR_NONE;
     Settings::NetworkInfo networkInfo;
     Settings::ParentInfo parentInfo;
@@ -392,6 +408,9 @@ otError Mle::Store(void)
     mNetif.GetKeyManager().SetStoredMacFrameCounter(networkInfo.mMacFrameCounter);
 
     otLogDebgMle(GetInstance(), "Store Network Information");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Store Network Information\n");
+#endif
 
 exit:
     return error;
@@ -443,6 +462,9 @@ otError Mle::Discover(uint32_t aScanChannels, uint16_t aPanId, bool aJoiner, boo
     mIsDiscoverInProgress = true;
 
     otLogInfoMle(GetInstance(), "Sent discovery request");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx DiscoveryReq\n");
+#endif
 
 exit:
 
@@ -567,6 +589,9 @@ otError Mle::SetStateDetached(void)
     mNetif.GetIp6().mMpl.SetTimerExpirations(0);
 
     otLogInfoMle(GetInstance(), "Mode -> Detached");
+#if ENABLE_DEBUG
+    printf("\n[OT-MLE]: Mode -> Detached\n\n");
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -613,6 +638,9 @@ otError Mle::SetStateChild(uint16_t aRloc16)
     }
 
     otLogInfoMle(GetInstance(), "Mode -> Child");
+#if ENABLE_DEBUG
+    printf("\n[OT-MLE]: Mode -> Child\n\n");
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -1534,10 +1562,16 @@ otError Mle::SendParentRequest(void)
 
     if ((scanMask & ScanMaskTlv::kEndDeviceFlag) == 0)
     {
+#if ENABLE_DEBUG
+        printf("[OT-MLE]: Tx ParentReq to routers\n");
+#endif
         otLogInfoMle(GetInstance(), "Sent parent request to routers");
     }
     else
     {
+#if ENABLE_DEBUG
+        printf("[OT-MLE]: Tx ParentReq to all devices\n");
+#endif
         otLogInfoMle(GetInstance(), "Sent parent request to all devices");
     }
 
@@ -1545,10 +1579,16 @@ exit:
 
     if ((scanMask & ScanMaskTlv::kEndDeviceFlag) == 0)
     {
+#if ENABLE_DEBUG
+        printf("[OT-MLE]: Wait ParentResponse as a router\n");
+#endif
         mParentRequestTimer.Start(kParentRequestRouterTimeout);
     }
     else
     {
+#if ENABLE_DEBUG
+        printf("[OT-MLE]: Wait ParentResponse as an end device\n");
+#endif
         mParentRequestTimer.Start(kParentRequestChildTimeout);
     }
 
@@ -1590,7 +1630,9 @@ otError Mle::SendChildIdRequest(void)
     destination.SetIid(mParentCandidate.GetExtAddress());
     SuccessOrExit(error = SendMessage(*message, destination));
     otLogInfoMle(GetInstance(), "Sent Child ID Request");
-
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx Child ID Req\n");
+#endif
     if ((mDeviceMode & ModeTlv::kModeRxOnWhenIdle) == 0)
     {
         mNetif.GetMeshForwarder().GetDataPollManager().SetAttachMode(true);
@@ -1634,6 +1676,9 @@ otError Mle::SendDataRequest(const Ip6::Address &aDestination, const uint8_t *aT
     }
 
     otLogInfoMle(GetInstance(), "Sent Data Request");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx DataReq\n");
+#endif
 
 exit:
 
@@ -1721,6 +1766,9 @@ otError Mle::SendChildUpdateRequest(void)
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Sent Child Update Request to parent");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx ChildUpdateReq to parent\n");
+#endif
 
     if ((mDeviceMode & ModeTlv::kModeRxOnWhenIdle) == 0)
     {
@@ -1789,6 +1837,9 @@ otError Mle::SendChildUpdateResponse(const uint8_t *aTlvs, uint8_t aNumTlvs, con
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Sent Child Update Response to parent");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx Child Update Response to parent\n");
+#endif
 
 exit:
 
@@ -1844,6 +1895,9 @@ otError Mle::SendAnnounce(uint8_t aChannel, bool aOrphanAnnounce)
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "sent announce on channel %d", aChannel);
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx Annouce\n");
+#endif
 
 exit:
 
@@ -1864,6 +1918,9 @@ void Mle::SendOrphanAnnounce(void)
                                                               MeshCoP::Tlv::kChannelMask));
 
     VerifyOrExit(channelMask != NULL);
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Tx OrphanAnnounce\n");
+#endif
 
     // find next channel in the Active Operational Dataset Channel Mask
     channel = mAnnounceChannel;
@@ -2261,6 +2318,9 @@ otError Mle::HandleAdvertisement(const Message &aMessage, const Ip6::MessageInfo
     VerifyOrExit(leaderData.IsValid(), error = OT_ERROR_PARSE);
 
     otLogInfoMle(GetInstance(), "Received advertisement from %04x", sourceAddress.GetRloc16());
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Advertisement from %04x\n", sourceAddress.GetRloc16());
+#endif
 
     if (mRole != OT_DEVICE_ROLE_DETACHED)
     {
@@ -2340,6 +2400,9 @@ otError Mle::HandleDataResponse(const Message &aMessage, const Ip6::MessageInfo 
     otError error;
 
     otLogInfoMle(GetInstance(), "Received Data Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Data Response\n");
+#endif
 
     error = HandleLeaderData(aMessage, aMessageInfo);
 
@@ -2568,6 +2631,9 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
     int8_t diff;
 
     otLogInfoMle(GetInstance(), "Received Parent Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Parent Response\n");
+#endif
 
     // Response
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kResponse, sizeof(response), response));
@@ -2710,6 +2776,9 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
     uint16_t offset;
 
     otLogInfoMle(GetInstance(), "Received Child ID Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Child ID Response\n");
+#endif
 
     VerifyOrExit(mParentRequestState == kChildIdRequest);
 
@@ -2772,7 +2841,7 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
     // Parent Attach Success
     mParentRequestTimer.Stop();
     mReattachState = kReattachStop;
-    SetStateDetached();
+    SetStateDetached(); /* hskim: First detached */
 
     SetLeaderData(leaderData.GetPartitionId(), leaderData.GetWeighting(), leaderData.GetLeaderRouterId());
 
@@ -2804,7 +2873,7 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
 
     mNetif.GetActiveDataset().ApplyConfiguration();
 
-    SuccessOrExit(error = SetStateChild(shortAddress.GetRloc16()));
+    SuccessOrExit(error = SetStateChild(shortAddress.GetRloc16())); /* hskim: Now become child */
 
 exit:
 
@@ -2832,6 +2901,9 @@ otError Mle::HandleChildUpdateRequest(const Message &aMessage, const Ip6::Messag
     uint8_t numTlvs = 0;
 
     otLogInfoMle(GetInstance(), "Received Child Update Request from parent");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Child UpdateReq from parent\n");
+#endif
 
     // Source Address
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kSourceAddress, sizeof(sourceAddress), sourceAddress));
@@ -2905,6 +2977,9 @@ otError Mle::HandleChildUpdateResponse(const Message &aMessage, const Ip6::Messa
     TimeoutTlv timeout;
 
     otLogInfoMle(GetInstance(), "Received Child Update Response from parent");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Child Update Response from parent\n");
+#endif
 
     // Status
     if (Tlv::GetTlv(aMessage, Tlv::kStatus, sizeof(status), status) == OT_ERROR_NONE)
@@ -3011,6 +3086,9 @@ otError Mle::HandleAnnounce(const Message &aMessage, const Ip6::MessageInfo &aMe
     PanIdTlv panid;
 
     otLogInfoMle(GetInstance(), "Received announce");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Announce\n");
+#endif
 
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kChannel, sizeof(channel), channel));
     VerifyOrExit(channel.IsValid(), error = OT_ERROR_PARSE);
@@ -3058,6 +3136,9 @@ otError Mle::HandleDiscoveryResponse(const Message &aMessage, const Ip6::Message
     uint16_t end;
 
     otLogInfoMle(GetInstance(), "Handle discovery response");
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Rx Discovery Response\n");
+#endif
 
     VerifyOrExit(mIsDiscoverInProgress, error = OT_ERROR_DROP);
 

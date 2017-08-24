@@ -56,6 +56,8 @@
 
 #if OPENTHREAD_FTD && OPENTHREAD_ENABLE_COMMISSIONER
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap64;
 
 namespace ot {

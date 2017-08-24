@@ -41,6 +41,8 @@
 #include "net/udp6.hpp"
 #include "thread/thread_netif.hpp"
 
+#define ENABLE_DEBUG (1)
+
 /**
  * @file
  *   This file contains common code base for CoAP client and server.
@@ -223,6 +225,9 @@ otError Coap::SendEmptyMessage(Header::Type aType, const Header &aRequestHeader,
     Header responseHeader;
     Message *message = NULL;
 
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: Tx EmptyMsg\n");
+#endif
     VerifyOrExit(aRequestHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE, error = OT_ERROR_INVALID_ARGS);
 
     responseHeader.Init(aType, OT_COAP_CODE_EMPTY);
@@ -249,6 +254,10 @@ otError Coap::SendHeaderResponse(Header::Code aCode, const Header &aRequestHeade
     Header responseHeader;
     Header::Type requestType;
     Message *message = NULL;
+
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: Tx HeaderResponse\n");
+#endif
 
     VerifyOrExit(aRequestHeader.IsRequest(), error = OT_ERROR_INVALID_ARGS);
 
@@ -559,6 +568,10 @@ void Coap::ProcessReceivedResponse(Header &aResponseHeader, Message &aMessage,
 
     message = FindRelatedRequest(aResponseHeader, aMessageInfo, requestHeader, coapMetadata);
 
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: Rx Response\n");
+#endif
+
     if (message == NULL)
     {
         ExitNow();
@@ -634,7 +647,9 @@ void Coap::ProcessReceivedRequest(Header &aHeader, Message &aMessage, const Ip6:
     const Header::Option *coapOption;
     Message *cachedResponse = NULL;
     otError error = OT_ERROR_NOT_FOUND;
-
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: Rx Req\n");
+#endif
     if (mInterceptor != NULL)
     {
         SuccessOrExit(error = mInterceptor(aMessage, aMessageInfo, mContext));
