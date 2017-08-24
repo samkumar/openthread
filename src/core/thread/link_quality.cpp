@@ -40,6 +40,8 @@
 
 #include "common/code_utils.hpp"
 
+#define ENABLE_DEBUG (1)
+
 namespace ot {
 
 enum
@@ -118,8 +120,10 @@ void LinkQualityInfo::AddRss(int8_t aNoiseFloor, int8_t aRss)
     {
         mCount++;
     }
-
     UpdateLinkQuality(aNoiseFloor);
+#if ENABLE_DEBUG
+    printf("[OT-LQ]: newRss %d, AvgRss %d, LQ %u\n", mLastRss, GetAverageRss(), mLinkQuality);
+#endif
 
 exit:
     return;

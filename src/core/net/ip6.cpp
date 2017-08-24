@@ -49,6 +49,8 @@
 #include "net/udp6.hpp"
 #include "thread/mle.hpp"
 
+#define ENABLE_DEBUG (1)
+
 namespace ot {
 namespace Ip6 {
 
