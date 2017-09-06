@@ -48,6 +48,8 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#define ENABLE_DEBUG (1)
+
 namespace ot {
 namespace NetworkData {
 
@@ -675,6 +677,9 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
     }
 
     otLogInfoNetData(GetInstance(), "Sent server data notification");
+#if ENABLE_DEBUG
+    printf("[OT-NetworkData]: Tx Server Data Notification\n");
+#endif
 
 exit:
 

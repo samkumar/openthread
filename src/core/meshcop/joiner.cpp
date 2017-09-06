@@ -54,6 +54,8 @@
 
 #if OPENTHREAD_ENABLE_JOINER
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap16;
 using ot::Encoding::BigEndian::HostSwap64;
 
@@ -358,7 +360,9 @@ void Joiner::SendJoinerFinalize(void)
     SuccessOrExit(error = netif.GetCoapSecure().SendMessage(*message, Joiner::HandleJoinerFinalizeResponse, this));
 
     otLogInfoMeshCoP(GetInstance(), "Sent joiner finalize");
-
+#if ENABLE_DEBUG
+    printf("[OT-Joiner]: Tx Joiner Finalize\n");
+#endif
 exit:
 
     if (error != OT_ERROR_NONE && message != NULL)
@@ -397,6 +401,9 @@ void Joiner::HandleJoinerFinalizeResponse(Coap::Header *aHeader, Message *aMessa
     mTimer.Start(kTimeout);
 
     otLogInfoMeshCoP(GetInstance(), "received joiner finalize response %d", static_cast<uint8_t>(state.GetState()));
+#if ENABLE_DEBUG
+    printf("[OT-Joiner]: Rx Joiner Finalize Response\n");
+#endif
 #if OPENTHREAD_ENABLE_CERT_LOG
     uint8_t buf[OPENTHREAD_CONFIG_MESSAGE_BUFFER_SIZE];
     VerifyOrExit(aMessage->GetLength() <= sizeof(buf));
@@ -437,6 +444,9 @@ void Joiner::HandleJoinerEntrust(Coap::Header &aHeader, Message &aMessage, const
 
     otLogInfoMeshCoP(GetInstance(), "Received joiner entrust");
     otLogCertMeshCoP(GetInstance(), "[THCI] direction=recv | type=JOIN_ENT.ntf");
+#if ENABLE_DEBUG
+    printf("[OT-Joiner]: Rx Joiner Entrust\n");
+#endif
 
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kNetworkMasterKey, sizeof(masterKey), masterKey));
     VerifyOrExit(masterKey.IsValid(), error = OT_ERROR_PARSE);
@@ -469,6 +479,9 @@ void Joiner::HandleJoinerEntrust(Coap::Header &aHeader, Message &aMessage, const
     }
 
     otLogInfoMeshCoP(GetInstance(), "join success!");
+#if ENABLE_DEBUG
+    printf("[OT-Joiner]: Join Success!\n");
+#endif
 
     // Send dummy response.
     SendJoinerEntrustResponse(aHeader, aMessageInfo);
@@ -509,7 +522,9 @@ void Joiner::SendJoinerEntrustResponse(const Coap::Header &aRequestHeader,
     mState = OT_JOINER_STATE_JOINED;
 
     otLogInfoArp(GetInstance(), "Sent Joiner Entrust response");
-
+#if ENABLE_DEBUG
+    printf("[OT-Joiner]: Tx Joiner Entrust Response\n");
+#endif
     otLogInfoMeshCoP(GetInstance(), "Sent joiner entrust response length = %d", message->GetLength());
     otLogCertMeshCoP(GetInstance(), "[THCI] direction=send | type=JOIN_ENT.rsp");
 

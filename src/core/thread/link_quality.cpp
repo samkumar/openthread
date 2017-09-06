@@ -40,6 +40,8 @@
 #include "common/code_utils.hpp"
 #include "utils/wrap_string.h"
 
+#define ENABLE_DEBUG (0)
+
 namespace ot {
 
 // This array gives the decimal point digits representing 0/8, 1/8, ..., 7/8 (does not include the '.').
@@ -96,6 +98,10 @@ otError RssAverager::Add(int8_t aRss)
 
         mAverage = static_cast<uint16_t>(((oldAverage << kCoeffBitShift) - oldAverage + newValue) >> kCoeffBitShift);
     }
+
+#if ENABLE_DEBUG
+    printf("[OT-LQ]: newRss %d, AvgRss %d, LQ %u\n", mLastRss, GetAverageRss(), mLinkQuality);
+#endif
 
 exit:
     return error;

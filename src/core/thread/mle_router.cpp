@@ -53,6 +53,8 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -81,7 +83,7 @@ MleRouter::MleRouter(ThreadNetif &aThreadNetif):
     mRouterSelectionJitterTimeout(0),
     mParentPriority(kParentPriorityUnspecified)
 {
-    mDeviceMode |= ModeTlv::kModeFFD | ModeTlv::kModeFullNetworkData;
+    mDeviceMode |= ModeTlv::kModeFFD | ModeTlv::kModeRxOnWhenIdle | ModeTlv::kModeFullNetworkData;
 
     memset(mChildren, 0, sizeof(mChildren));
     memset(mRouters, 0, sizeof(mRouters));
@@ -187,6 +189,10 @@ uint8_t MleRouter::AllocateRouterId(uint8_t aRouterId)
     rval = aRouterId;
 
     otLogInfoMle(GetInstance(), "add router id %d", aRouterId);
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Add Router ID %d\n", aRouterId);
+#endif
+
 
 exit:
     return rval;
@@ -202,6 +208,10 @@ otError MleRouter::ReleaseRouterId(uint8_t aRouterId)
     VerifyOrExit(mRole == OT_DEVICE_ROLE_LEADER, error = OT_ERROR_INVALID_STATE);
 
     otLogInfoMle(GetInstance(), "delete router id %d", aRouterId);
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Delete Router ID %d\n", aRouterId);
+#endif
+
     router->SetAllocated(false);
     router->SetReclaimDelay(true);
     router->SetState(Neighbor::kStateInvalid);
@@ -392,6 +402,9 @@ otError MleRouter::HandleChildStart(AttachMode aMode)
         }
         else if (HasChildren())
         {
+#if ENABLE_DEBUG
+            printf("[OT-MLERouter]: Willing to be a router after Rx ChildIDReq\n");
+#endif
             BecomeRouter(ThreadStatusTlv::kHaveChildIdRequest);
         }
 
@@ -402,6 +415,10 @@ otError MleRouter::HandleChildStart(AttachMode aMode)
         if (HasChildren() &&
             mPreviousPartitionId != mLeaderData.GetPartitionId())
         {
+
+#if ENABLE_DEBUG
+            printf("[OT-MLERouter]: Willing to be a router after PartitionChange\n");
+#endif
             BecomeRouter(ThreadStatusTlv::kParentPartitionChange);
         }
 
@@ -453,6 +470,9 @@ otError MleRouter::SetStateRouter(uint16_t aRloc16)
     }
 
     otLogInfoMle(GetInstance(), "Mode -> Router");
+#if ENABLE_DEBUG
+    printf("\n[OT-MLERouter]: Mode -> Router\n\n");
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -497,6 +517,10 @@ otError MleRouter::SetStateLeader(uint16_t aRloc16)
     }
 
     otLogInfoMle(GetInstance(), "Mode -> Leader %d", mLeaderData.GetPartitionId());
+#if ENABLE_DEBUG
+    printf("\n[OT-MLERouter]: Mode -> Leader\n\n");
+#endif
+
     return OT_ERROR_NONE;
 }
 
@@ -573,6 +597,10 @@ otError MleRouter::SendAdvertisement(void)
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Sent advertisement");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Advertisement\n");
+#endif
+
 
 exit:
 
@@ -647,6 +675,9 @@ otError MleRouter::SendLinkRequest(Neighbor *aNeighbor)
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Sent link request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx LinkReq\n");
+#endif
 
 exit:
 
@@ -671,6 +702,9 @@ otError MleRouter::HandleLinkRequest(const Message &aMessage, const Ip6::Message
     uint16_t rloc16;
 
     otLogInfoMle(GetInstance(), "Received link request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx LinkReq\n");
+#endif
 
     VerifyOrExit(mRole == OT_DEVICE_ROLE_ROUTER || mRole == OT_DEVICE_ROLE_LEADER, error = OT_ERROR_INVALID_STATE);
 
@@ -827,12 +861,18 @@ otError MleRouter::SendLinkAccept(const Ip6::MessageInfo &aMessageInfo, Neighbor
                                                  (otPlatRandomGet() % kMaxResponseDelay) + 1));
 
         otLogInfoMle(GetInstance(), "Delayed link accept");
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Delayed LinkAccept\n");
+#endif
     }
     else
     {
         SuccessOrExit(error = SendMessage(*message, aMessageInfo.GetPeerAddr()));
 
         otLogInfoMle(GetInstance(), "Sent link accept");
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Tx LinkAccept\n");
+#endif
     }
 
 exit:
@@ -881,6 +921,10 @@ otError MleRouter::HandleLinkAccept(const Message &aMessage, const Ip6::MessageI
     TlvRequestTlv tlvRequest;
 
     aMessageInfo.GetPeerAddr().ToExtAddress(macAddr);
+
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx LinkAccept\n");
+#endif
 
     // Version
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kVersion, sizeof(version), version));
@@ -1148,6 +1192,10 @@ otError MleRouter::ProcessRouteTlv(const RouteTlv &aRoute)
     mRouterIdSequence = aRoute.GetRouterIdSequence();
     mRouterIdSequenceLastUpdated = TimerMilli::GetNow();
 
+#if ENABLE_DEBUG
+    printf("%u ", mRouters[mRouterId].IsAllocated());
+#endif
+
     for (uint8_t i = 0; i <= kMaxRouterId; i++)
     {
         bool old = mRouters[i].IsAllocated();
@@ -1159,9 +1207,15 @@ otError MleRouter::ProcessRouteTlv(const RouteTlv &aRoute)
             GetNetif().GetAddressResolver().Remove(i);
         }
     }
+#if ENABLE_DEBUG
+    printf("%u\n", mRouters[mRouterId].IsAllocated());
+#endif
 
     if (mRole == OT_DEVICE_ROLE_ROUTER && !mRouters[mRouterId].IsAllocated())
     {
+#if ENABLE_DEBUG
+        printf("Somthing is Weird!\n");
+#endif
         BecomeDetached();
         ExitNow(error = OT_ERROR_NO_ROUTE);
     }
@@ -1272,6 +1326,10 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
 
     aMessageInfo.GetPeerAddr().ToExtAddress(macAddr);
 
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Advertisement\n");
+#endif
+
     // Source Address
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kSourceAddress, sizeof(sourceAddress), sourceAddress));
     VerifyOrExit(sourceAddress.IsValid(), error = OT_ERROR_PARSE);
@@ -1291,6 +1349,8 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kRoute, sizeof(route), route));
     VerifyOrExit(route.IsValid(), error = OT_ERROR_PARSE);
 
+
+
     partitionId = leaderData.GetPartitionId();
 
     if (partitionId != mLeaderData.GetPartitionId())
@@ -1298,6 +1358,9 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
         otLogDebgMle(GetInstance(), "different partition! %d %d %d %d",
                      leaderData.GetWeighting(), partitionId,
                      mLeaderData.GetWeighting(), mLeaderData.GetPartitionId());
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Different partition!\n");
+#endif
 
         if (partitionId == mLastPartitionId && (mDeviceMode & ModeTlv::kModeFFD))
         {
@@ -1324,6 +1387,9 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
         if (ComparePartitions(routerCount <= 1, leaderData, IsSingleton(), mLeaderData) > 0)
         {
             otLogDebgMle(GetInstance(), "trying to migrate");
+#if ENABLE_DEBUG
+            printf("[OT-MLERouter]: Trying to migrate\n");
+#endif
             BecomeChild(kAttachBetter);
         }
 
@@ -1344,10 +1410,12 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
     routerId = GetRouterId(sourceAddress.GetRloc16());
     router = GetRouter(routerId);
     VerifyOrExit(router != NULL, error = OT_ERROR_PARSE);
-
     if ((mDeviceMode & ModeTlv::kModeFFD) &&
         static_cast<int8_t>(route.GetRouterIdSequence() - mRouterIdSequence) > 0)
     {
+#if ENABLE_DEBUG
+        printf("Role: %u\n", mRole);
+#endif
         bool processRouteTlv = false;
 
         switch (mRole)
@@ -1478,7 +1546,6 @@ otError MleRouter::HandleAdvertisement(const Message &aMessage, const Ip6::Messa
         {
             ExitNow(error = OT_ERROR_NO_ROUTE);
         }
-
         // Send link request if no link to router
         if (router->GetState() != Neighbor::kStateValid)
         {
@@ -1610,8 +1677,34 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
     }
     while (update);
 
-#if (OPENTHREAD_CONFIG_LOG_MLE && (OPENTHREAD_CONFIG_LOG_LEVEL >= OT_LOG_LEVEL_DEBG))
+#if ENABLE_DEBUG
+    uint16_t addr;
+    printf("\nMy ML-RLOC16: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal16().mFields.m16[i]);
+        if (addr != 0) {
+            printf("%4x", addr);
+        }
+        if (i < 7) {
+            printf(":");
+        }
+    }
+    printf("\nMy ML-EID: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal64().mFields.m16[i]);
+        if (addr != 0) {
+            printf("%4x", addr);
+        }
+        if (i < 7) {
+            printf(":");
+        }
+    }
+    printf("\n\n");
+    printf("-------------------- [OT-Routing Table] --------------------\n");
+    printf("   NodeID  NextHop  RouteCost  LinkCost  InLinkQ  OutLinkQ\n");    
+#endif
 
+//#if (OPENTHREAD_CONFIG_LOG_MLE && (OPENTHREAD_CONFIG_LOG_LEVEL >= OT_LOG_LEVEL_DEBG))
     for (uint8_t i = 0; i <= kMaxRouterId; i++)
     {
         if (mRouters[i].IsAllocated() == false || !IsRouterIdValid(mRouters[i].GetNextHop()))
@@ -1626,9 +1719,19 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                      mRouters[i].GetCost(),
                      GetLinkCost(i), mRouters[i].GetLinkInfo().GetLinkQuality(),
                      mRouters[i].GetLinkQualityOut());
-    }
-
+#if ENABLE_DEBUG
+        printf("   %x:     %x       %d          %d         %d        %d\n",
+                     GetRloc16(i),
+                     GetRloc16(mRouters[i].GetNextHop()),
+                     mRouters[i].GetCost(),
+                     GetLinkCost(i), mRouters[i].GetLinkInfo().GetLinkQuality(),
+                     mRouters[i].GetLinkQualityOut());
 #endif
+    }
+#if ENABLE_DEBUG
+    printf("------------------------------------------------------------\n");
+#endif
+//#endif
 }
 
 otError MleRouter::HandleParentRequest(const Message &aMessage, const Ip6::MessageInfo &aMessageInfo)
@@ -1642,6 +1745,9 @@ otError MleRouter::HandleParentRequest(const Message &aMessage, const Ip6::Messa
     Child *child;
 
     otLogInfoMle(GetInstance(), "Received parent request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx ParentReq\n");
+#endif
 
     // A Router MUST NOT send an MLE Parent Response if:
 
@@ -1760,6 +1866,9 @@ void MleRouter::HandleStateUpdateTimer(void)
             if (GetActiveRouterCount() < mRouterUpgradeThreshold)
             {
                 // upgrade to Router
+#if ENABLE_DEBUG
+                printf("[OT-MLERouter]: Willing to be a router due to enough routerAddr capacity\n");
+#endif
                 BecomeRouter(ThreadStatusTlv::kTooFewRouters);
             }
             else if (!mAdvertiseTimer.IsRunning())
@@ -1938,6 +2047,9 @@ otError MleRouter::SendParentResponse(Child *aChild, const ChallengeTlv &challen
     SuccessOrExit(error = AddDelayedResponse(*message, destination, delay));
 
     otLogInfoMle(GetInstance(), "Delayed Parent Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Delay Parent Response\n");
+#endif
 
 exit:
 
@@ -1984,6 +2096,10 @@ otError MleRouter::UpdateChildAddresses(const AddressRegistrationTlv &aTlv, Chil
 
         otLogInfoMle(GetInstance(), "Child 0x%04x IPv6 address[%d]=%s", aChild.GetRloc16(), count,
                      address.ToString(stringBuffer, sizeof(stringBuffer)));
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Child 0x%04x IPv6 addr[%d]=%s\n", aChild.GetRloc16(), count,
+                     address.ToString(stringBuffer, sizeof(stringBuffer)));
+#endif
 
         // We check if the same address is in-use by another child, if so
         // remove it. This implements "last-in wins" duplicate address
@@ -2014,11 +2130,18 @@ otError MleRouter::UpdateChildAddresses(const AddressRegistrationTlv &aTlv, Chil
     if (count == 0)
     {
         otLogInfoMle(GetInstance(), "Child 0x%04x has no registered IPv6 address", aChild.GetRloc16());
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Child 0x%04x has no registered IPv6 addr\n", aChild.GetRloc16());
+#endif
     }
     else
     {
         otLogInfoMle(GetInstance(), "Child 0x%04x has %d registered IPv6 address%s", aChild.GetRloc16(), count,
                      (count == 1) ? "" : "es");
+#if ENALBE_DEBUG
+        printf("[OT-MLERouter]: Child 0x%04x has %d registered IPv6 addr%s\n", aChild.GetRloc16(), count,
+                     (count == 1) ? "" : "es");
+#endif
     }
 
     OT_UNUSED_VARIABLE(stringBuffer);
@@ -2046,6 +2169,9 @@ otError MleRouter::HandleChildIdRequest(const Message &aMessage, const Ip6::Mess
     uint8_t numTlvs;
 
     otLogInfoMle(GetInstance(), "Received Child ID Request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Child ID Req\n");
+#endif
 
     // only process message when operating as a child, router, or leader
     VerifyOrExit(mRole >= OT_DEVICE_ROLE_CHILD, error = OT_ERROR_INVALID_STATE);
@@ -2222,6 +2348,9 @@ otError MleRouter::HandleChildUpdateRequest(const Message &aMessage, const Ip6::
     uint8_t tlvslength = 0;
 
     otLogInfoMle(GetInstance(), "Received Child Update Request from child");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Child Update Req from child\n");
+#endif
 
     // Mode
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kMode, sizeof(mode), mode));
@@ -2333,6 +2462,9 @@ otError MleRouter::HandleChildUpdateResponse(const Message &aMessage, const Ip6:
     Child *child;
 
     otLogInfoMle(GetInstance(), "Received Child Update Response from child");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Child Update Response from child\n");
+#endif
 
     // Find Child
     aMessageInfo.GetPeerAddr().ToExtAddress(macAddr);
@@ -2417,6 +2549,9 @@ otError MleRouter::HandleDataRequest(const Message &aMessage, const Ip6::Message
     uint8_t numTlvs;
 
     otLogInfoMle(GetInstance(), "Received Data Request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx DataReq\n");
+#endif
 
     // TLV Request
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kTlvRequest, sizeof(tlvRequest), tlvRequest));
@@ -2563,6 +2698,9 @@ otError MleRouter::HandleDiscoveryRequest(const Message &aMessage, const Ip6::Me
     uint16_t end;
 
     otLogInfoMle(GetInstance(), "Received discovery request");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Discovery Req\n");
+#endif
 
     // only Routers and REEDs respond
     VerifyOrExit((mDeviceMode & ModeTlv::kModeFFD) != 0, error = OT_ERROR_INVALID_STATE);
@@ -2710,6 +2848,10 @@ otError MleRouter::SendDiscoveryResponse(const Ip6::Address &aDestination, uint1
     SuccessOrExit(error = AddDelayedResponse(*message, aDestination, delay));
 
     otLogInfoMle(GetInstance(), "Sent discovery response");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Discovery Response\n");
+#endif
+
 
 exit:
 
@@ -2798,6 +2940,10 @@ otError MleRouter::SendChildIdResponse(Child *aChild)
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Sent Child ID Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Child ID Response\n");
+#endif
+
 
 exit:
 
@@ -2859,6 +3005,10 @@ otError MleRouter::SendChildUpdateRequest(Child *aChild)
     }
 
     otLogInfoMle(GetInstance(), "Sent Child Update Request to child");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Child Update Req to child\n");
+#endif
+
 
 exit:
 
@@ -2931,6 +3081,10 @@ otError MleRouter::SendChildUpdateResponse(Child *aChild, const Ip6::MessageInfo
     SuccessOrExit(error = SendMessage(*message, aMessageInfo.GetPeerAddr()));
 
     otLogInfoMle(GetInstance(), "Sent Child Update Response to child");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Child Update Response to child\n");
+#endif
+
 
 exit:
 
@@ -2987,6 +3141,10 @@ otError MleRouter::SendDataResponse(const Ip6::Address &aDestination, const uint
     }
 
     otLogInfoMle(GetInstance(), "Sent Data Response");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Data Response\n");
+#endif
+
 
 exit:
 
@@ -3379,10 +3537,16 @@ uint16_t MleRouter::GetNextHop(uint16_t aDestination)
         VerifyOrExit(nextHop != NULL && nextHop->GetState() != Neighbor::kStateInvalid);
 
         rval = GetRloc16(router->GetNextHop());
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Multihop\n");
+#endif
     }
     else if (linkCost < kMaxRouteCost)
     {
         rval = GetRloc16(destinationId);
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Singlehop\n");
+#endif
     }
 
 exit:
@@ -3822,20 +3986,33 @@ otError MleRouter::SendAddressSolicit(ThreadStatusTlv::Status aStatus)
 
     VerifyOrExit((message = netif.GetCoap().NewMessage(header)) != NULL, error = OT_ERROR_NO_BUFS);
 
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Make AddrSol init %u\n", message->GetLength());
+#endif
+
     macAddr64Tlv.Init();
     macAddr64Tlv.SetMacAddr(*netif.GetMac().GetExtAddress());
     SuccessOrExit(error = message->Append(&macAddr64Tlv, sizeof(macAddr64Tlv)));
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Make AddrSol macAddr64Tlv %u -> %u\n", sizeof(macAddr64Tlv), message->GetLength());
+#endif
 
     if (IsRouterIdValid(mPreviousRouterId))
     {
         rlocTlv.Init();
         rlocTlv.SetRloc16(GetRloc16(mPreviousRouterId));
         SuccessOrExit(error = message->Append(&rlocTlv, sizeof(rlocTlv)));
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Make AddrSol rlocTlv %u -> %u\n", sizeof(rlocTlv), message->GetLength());
+#endif
     }
 
     statusTlv.Init();
     statusTlv.SetStatus(aStatus);
     SuccessOrExit(error = message->Append(&statusTlv, sizeof(statusTlv)));
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Make AddrSol statusTlv %u -> %u\n", sizeof(statusTlv), message->GetLength());
+#endif
 
     SuccessOrExit(error = GetLeaderAddress(messageInfo.GetPeerAddr()));
     messageInfo.SetSockAddr(GetMeshLocal16());
@@ -3845,6 +4022,9 @@ otError MleRouter::SendAddressSolicit(ThreadStatusTlv::Status aStatus)
                                                       &MleRouter::HandleAddressSolicitResponse, this));
 
     otLogInfoMle(GetInstance(), "Sent address solicit to %04x", HostSwap16(messageInfo.GetPeerAddr().mFields.m16[7]));
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Addr solicit to %04x\n", HostSwap16(messageInfo.GetPeerAddr().mFields.m16[7]));
+#endif
 
 exit:
 
@@ -3887,6 +4067,9 @@ otError MleRouter::SendAddressRelease(void)
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMle(GetInstance(), "Sent address release");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Addr Release\n");
+#endif
 
 exit:
 
@@ -3925,6 +4108,9 @@ void MleRouter::HandleAddressSolicitResponse(Coap::Header *aHeader, Message *aMe
     VerifyOrExit(aHeader->GetCode() == OT_COAP_CODE_CHANGED);
 
     otLogInfoMle(GetInstance(), "Received address reply");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Addr Reply\n");
+#endif
 
     SuccessOrExit(ThreadTlv::GetTlv(*aMessage, ThreadTlv::kStatus, sizeof(statusTlv), statusTlv));
     VerifyOrExit(statusTlv.IsValid());
@@ -4047,6 +4233,9 @@ void MleRouter::HandleAddressSolicit(Coap::Header &aHeader, Message &aMessage, c
                  error = OT_ERROR_PARSE);
 
     otLogInfoMle(GetInstance(), "Received address solicit");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Addr Solicit\n");
+#endif
 
     SuccessOrExit(error = ThreadTlv::GetTlv(aMessage, ThreadTlv::kExtMacAddress, sizeof(macAddr64Tlv), macAddr64Tlv));
     VerifyOrExit(macAddr64Tlv.IsValid(), error = OT_ERROR_PARSE);
@@ -4115,6 +4304,9 @@ void MleRouter::HandleAddressSolicit(Coap::Header &aHeader, Message &aMessage, c
     else
     {
         otLogInfoMle(GetInstance(), "router id requested and provided!");
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Router ID requested and provided!\n");
+#endif
     }
 
     router = GetRouter(routerId);
@@ -4126,6 +4318,9 @@ void MleRouter::HandleAddressSolicit(Coap::Header &aHeader, Message &aMessage, c
     else
     {
         otLogInfoMle(GetInstance(), "router address unavailable!");
+#if ENABLE_DEBUG
+        printf("[OT-MLERouter]: Router Addr unavailable!\n");
+#endif
     }
 
 exit:
@@ -4180,6 +4375,9 @@ void MleRouter::SendAddressSolicitResponse(const Coap::Header &aRequestHeader, u
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMle(GetInstance(), "Sent address reply");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Addr Reply\n");
+#endif
 
 exit:
 
@@ -4209,6 +4407,9 @@ void MleRouter::HandleAddressRelease(Coap::Header &aHeader, Message &aMessage,
                  aHeader.GetCode() == OT_COAP_CODE_POST);
 
     otLogInfoMle(GetInstance(), "Received address release");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Rx Addr Release\n");
+#endif
 
     SuccessOrExit(ThreadTlv::GetTlv(aMessage, ThreadTlv::kRloc16, sizeof(rlocTlv), rlocTlv));
     VerifyOrExit(rlocTlv.IsValid());
@@ -4227,6 +4428,9 @@ void MleRouter::HandleAddressRelease(Coap::Header &aHeader, Message &aMessage,
     SuccessOrExit(GetNetif().GetCoap().SendEmptyAck(aHeader, aMessageInfo));
 
     otLogInfoMle(GetInstance(), "Sent address release response");
+#if ENABLE_DEBUG
+    printf("[OT-MLERouter]: Tx Addr Release Response\n");
+#endif
 
 exit:
     return;

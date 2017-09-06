@@ -47,6 +47,8 @@
 #include "thread/mle.hpp"
 #include "thread/thread_netif.hpp"
 
+#define ENABLE_DEBUG (1)
+
 namespace ot {
 
 DataPollManager::DataPollManager(MeshForwarder &aMeshForwarder):
@@ -128,7 +130,9 @@ exit:
     {
     case OT_ERROR_NONE:
         otLogDebgMac(GetInstance(), "Sending data poll");
-
+#if ENABLE_DEBUG
+        printf("[OT-DataPollMGR]: Tx Data Poll\n");
+#endif
         if (mNoBufferRetxMode == true)
         {
             mNoBufferRetxMode = false;

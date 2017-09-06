@@ -45,6 +45,8 @@
 #include "common/message.hpp"
 #include "net/ip6.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -182,7 +184,9 @@ otError Icmp::HandleEchoRequest(Message &aRequestMessage, const MessageInfo &aMe
     uint16_t payloadLength;
 
     otLogInfoIcmp(GetInstance(), "Received Echo Request");
-
+#if ENABLE_DEBUG
+    printf("[OT-ICMP6]: Rx EchoReq\n\n");
+#endif
     icmp6Header.Init();
     icmp6Header.SetType(IcmpHeader::kTypeEchoReply);
 
@@ -209,6 +213,9 @@ otError Icmp::HandleEchoRequest(Message &aRequestMessage, const MessageInfo &aMe
     replyMessageInfo.SetInterfaceId(aMessageInfo.mInterfaceId);
 
     SuccessOrExit(error = GetIp6().SendDatagram(*replyMessage, replyMessageInfo, kProtoIcmp6));
+#if ENABLE_DEBUG
+    printf("[OT-ICMP6]: Tx EchoResponse\n");
+#endif
 
     replyMessage->Read(replyMessage->GetOffset(), sizeof(icmp6Header), &icmp6Header);
     otLogInfoIcmp(GetInstance(), "Sent Echo Reply (seq = %d)", icmp6Header.GetSequence());
