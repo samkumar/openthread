@@ -945,7 +945,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
         VerifyOrExit(mMeshDest != Mac::kShortAddrInvalid, error = OT_ERROR_DROP);
 
-        if (netif.GetMle().GetNeighbor(mMeshDest) != NULL)
+/*        if (netif.GetMle().GetNeighbor(mMeshDest) != NULL)
         {
             // destination is neighbor
             mMacDest.mLength = sizeof(mMacDest.mShortAddress);
@@ -969,7 +969,27 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 #if ENABLE_DEBUG
             printf("    -- %4x (Intermediate)\n", mMacDest.mShortAddress);
 #endif
-        }
+        }*/
+
+        mMacDest.mShortAddress = netif.GetMle().GetNextHop(mMeshDest);
+        VerifyOrExit(mMacDest.mShortAddress != Mac::kShortAddrInvalid, error = OT_ERROR_DROP);
+        mMacDest.mLength = sizeof(mMacDest.mShortAddress);
+
+        if (mMacDest.mShortAddress == mMeshDest) {
+#if ENABLE_DEBUG
+            printf("     -- %4x (FinalDest)\n", mMacDest.mShortAddress);
+#endif
+        } else {
+            // destination is not neighbor
+            mMeshSource = netif.GetMac().GetShortAddress();
+            mMacSource.mLength = sizeof(mMacSource.mShortAddress);
+            mMacSource.mShortAddress = mMeshSource;
+            mAddMeshHeader = true;
+#if ENABLE_DEBUG
+            printf("    -- %4x (Intermediate)\n", mMacDest.mShortAddress);
+#endif
+        }       
+
     }
 
 #else // OPENTHREAD_FTD
@@ -1562,6 +1582,7 @@ void MeshForwarder::HandleSentFrame(Mac::Frame &aFrame, otError aError)
             {
                 if (neighbor->GetLinkFailures() >= Mle::kFailedRouterTransmissions)
                 {
+
                     netif.GetMle().RemoveNeighbor(*neighbor);
                 }
             }
