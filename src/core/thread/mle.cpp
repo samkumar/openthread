@@ -1704,6 +1704,31 @@ otError Mle::SendChildUpdateRequest(void)
     Ip6::Address destination;
     Message *message = NULL;
 
+#if ENABLE_DEBUG
+    uint16_t addr;
+    printf("\nMy ML-RLOC16: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal16().mFields.m16[i]);
+        if (addr != 0) {
+            printf("%4x", addr);
+        }
+        if (i < 7) {
+            printf(":");
+        }
+    }
+    printf("\nMy ML-EID: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal64().mFields.m16[i]);
+        if (addr != 0) {
+            printf("%4x", addr);
+        }
+        if (i < 7) {
+            printf(":");
+        }
+    }
+    printf("\n\n");
+#endif
+
     if (mChildUpdateAttempts >= kMaxChildKeepAliveAttempts)
     {
         mChildUpdateAttempts = 0;
@@ -2184,16 +2209,28 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
     {
         if (keySequence == neighbor->GetKeySequence())
         {
-            if (frameCounter < neighbor->GetMleFrameCounter())
+            /* hskim: does not filter Parent Request */
+            if (frameCounter < neighbor->GetMleFrameCounter() /*&&  
+                command != Header::kCommandParentRequest && 
+                command != Header::kCommandChildIdRequest*/)
             {
+#if ENABLE_DEBUG
+                printf("[OT-MLE]: Frame Reject 1\n");
+#endif
                 otLogDebgMle(GetInstance(), "mle frame reject 1");
                 ExitNow();
             }
         }
         else
         {
-            if (keySequence <= neighbor->GetKeySequence())
+            /* hskim: does not filter Parent Request */
+            if (keySequence <= neighbor->GetKeySequence() /*&& 
+                command != Header::kCommandParentRequest && 
+                command != Header::kCommandChildIdRequest*/)
             {
+#if ENABLE_DEBUG
+                printf("[OT-MLE]: Frame Reject 1\n");
+#endif
                 otLogDebgMle(GetInstance(), "mle frame reject 2");
                 ExitNow();
             }
@@ -2217,6 +2254,9 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
               command == Header::kCommandChildUpdateResponse ||
               command == Header::kCommandAnnounce))
         {
+#if ENABLE_DEBUG
+            printf("[OT-MLE]: Sequence unknown\n");
+#endif
             otLogDebgMle(GetInstance(), "mle sequence unknown! %d", command);
             ExitNow();
         }
