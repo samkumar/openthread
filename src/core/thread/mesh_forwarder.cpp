@@ -578,6 +578,9 @@ Message *MeshForwarder::GetDirectTransmission(void)
             ThreadNetif &netif = GetNetif();
             Neighbor *parent = netif.GetMle().GetParent();
 
+#if ENABLE_DEBUG
+            printf("[OT-MeshForwarder]: Tx Data poll msg\n");
+#endif
             if ((parent != NULL) && (parent->IsStateValidOrRestoring()))
             {
                 mMacSource.mShortAddress = netif.GetMac().GetShortAddress();
@@ -587,6 +590,9 @@ Message *MeshForwarder::GetDirectTransmission(void)
                     mMacSource.mLength = sizeof(mMacSource.mShortAddress);
                     mMacDest.mLength = sizeof(mMacDest.mShortAddress);
                     mMacDest.mShortAddress = parent->GetRloc16();
+#if ENABLE_DEBUG
+                    printf("    -- %4x (FinalDest)\n", mMacDest.mShortAddress);
+#endif
                 }
                 else
                 {
@@ -600,10 +606,6 @@ Message *MeshForwarder::GetDirectTransmission(void)
             {
                 error = OT_ERROR_DROP;
             }
-#if ENABLE_DEBUG
-        printf("[OT-MeshForwarder]: Tx Data poll msg\n");
-#endif
-
             break;
         }
 

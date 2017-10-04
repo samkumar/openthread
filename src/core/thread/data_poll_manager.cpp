@@ -347,6 +347,10 @@ void DataPollManager::ScheduleNextPoll(PollPeriodSelector aPollPeriodSelector)
         mPollPeriod = CalculatePollPeriod();
     }
 
+#if ENABLE_DEBUG
+    printf("[OT-DataPollMGR]: Poll period %lu\n", mPollPeriod);
+#endif
+
     if (mTimer.IsRunning())
     {
         mTimer.StartAt(mTimerStartTime, mPollPeriod);
