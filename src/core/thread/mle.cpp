@@ -1321,7 +1321,11 @@ void Mle::HandleParentRequestTimer(void)
         break;
 
     case kParentRequestStart:
-        mParentRequestState = kParentRequestRouter;
+        if (mDeviceMode & ModeTlv::kModeFFD) {
+            mParentRequestState = kParentRequestRouter;
+        } else {
+            mParentRequestState = kParentRequestChild;
+        }
         mParentCandidate.SetState(Neighbor::kStateInvalid);
         SendParentRequest();
         break;
