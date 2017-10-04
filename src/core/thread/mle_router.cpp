@@ -1700,8 +1700,8 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
         }
     }
     printf("\n\n");
-    printf("-------------------- [OT-Routing Table] --------------------\n");
-    printf("   NodeID  NextHop  RouteCost  LinkCost  InLinkQ  OutLinkQ\n");    
+    printf("-------------------- [OT-Routing Table] -----------------\n");
+    printf("     NodeID  NextHop  RouteCost  LinkCost  NH-LinkCost\n");//InLinkQ  OutLinkQ\n");    
 #endif
 
 //#if (OPENTHREAD_CONFIG_LOG_MLE && (OPENTHREAD_CONFIG_LOG_LEVEL >= OT_LOG_LEVEL_DEBG))
@@ -1720,12 +1720,12 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                      GetLinkCost(i), mRouters[i].GetLinkInfo().GetLinkQuality(),
                      mRouters[i].GetLinkQualityOut());
 #if ENABLE_DEBUG
-        printf("   %x:     %x       %d          %d         %d        %d\n",
+        printf("RT   %x:     %x       %d          %d         %d    RT\n",
                      GetRloc16(i),
                      GetRloc16(mRouters[i].GetNextHop()),
                      mRouters[i].GetCost(),
-                     GetLinkCost(i), mRouters[i].GetLinkInfo().GetLinkQuality(),
-                     mRouters[i].GetLinkQualityOut());
+                     GetLinkCost(i), GetLinkCost(mRouters[i].GetNextHop())); 
+//mRouters[i].GetLinkInfo().GetLinkQuality(), mRouters[i].GetLinkQualityOut());
 #endif
     }
 #if ENABLE_DEBUG
