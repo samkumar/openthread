@@ -53,6 +53,8 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap64;
 
 namespace ot {
@@ -1252,6 +1254,9 @@ void Mac::SentFrame(otError aError)
                      mTransmitAttempts, sendFrame.GetMaxTxAttempts(),
                      sendFrame.ToInfoString(stringBuffer, sizeof(stringBuffer)));
         otDumpDebgMac(GetInstance(), "TX ERR", sendFrame.GetHeader(), 16);
+#if ENABLE_DEBUG
+        printf("[OT-MAC]: Tx Failed\n");
+#endif
 
         if (!RadioSupportsRetries() &&
             mTransmitAttempts < sendFrame.GetMaxTxAttempts())
@@ -1306,6 +1311,14 @@ void Mac::SentFrame(otError aError)
     {
         mCounters.mTxNoAckRequested++;
     }
+
+#if ENABLE_DEBUG
+    printf("--- [OT-Link] ---\n");
+    printf("Uni: (%lu,%lu,%lu)/%lu\nBro: %lu\n", mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
+           mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel,
+           mCounters.mTxAckRequested, mCounters.mTxNoAckRequested);
+    printf("-----------------\n\n");
+#endif    
 
     switch (mOperation)
     {
@@ -1567,6 +1580,9 @@ void Mac::ReceiveDoneTask(Frame *aFrame, otError aError)
 
     case sizeof(ShortAddress):
         otLogDebgMac(GetInstance(), "Received frame from short address 0x%04x", srcaddr.mShortAddress);
+#if ENABLE_DEBUG
+        printf("[OT-MAC]: Rx pkt from short addr 0x%04x\n", srcaddr.mShortAddress);
+#endif
 
         if (neighbor == NULL)
         {
