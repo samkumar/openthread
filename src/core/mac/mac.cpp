@@ -1312,6 +1312,14 @@ void Mac::SentFrame(otError aError)
         mCounters.mTxNoAckRequested++;
     }
 
+#if ENABLE_DEBUG
+    printf("--- [OT-Link] ---\n");
+    printf("Uni: (%lu,%lu,%lu)/%lu\nBro: %lu\n", mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
+           mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel,
+           mCounters.mTxAckRequested, mCounters.mTxNoAckRequested);
+    printf("-----------------\n\n");
+#endif    
+
     switch (mOperation)
     {
     case kOperationActiveScan:
