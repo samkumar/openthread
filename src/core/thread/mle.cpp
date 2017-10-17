@@ -1556,12 +1556,19 @@ otError Mle::SendParentRequest(void)
         break;
     }
 
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Try to Tx PR 1\n");
+#endif
     VerifyOrExit((message = NewMleMessage()) != NULL, error = OT_ERROR_NO_BUFS);
     SuccessOrExit(error = AppendHeader(*message, Header::kCommandParentRequest));
     SuccessOrExit(error = AppendMode(*message, mDeviceMode));
     SuccessOrExit(error = AppendChallenge(*message, mParentRequest.mChallenge, sizeof(mParentRequest.mChallenge)));
     SuccessOrExit(error = AppendScanMask(*message, scanMask));
     SuccessOrExit(error = AppendVersion(*message));
+
+#if ENABLE_DEBUG
+    printf("[OT-MLE]: Try to Tx PR 2\n");
+#endif
 
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
