@@ -257,7 +257,7 @@ otError Coap::SendHeaderResponse(Header::Code aCode, const Header &aRequestHeade
     Message *message = NULL;
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Tx HeaderResponse\n");
+    printf("[OT-COAP]: Tx HeaderResp\n");
 #endif
 
     VerifyOrExit(aRequestHeader.IsRequest(), error = OT_ERROR_INVALID_ARGS);
@@ -321,6 +321,10 @@ void Coap::HandleRetransmissionTimer(void)
     Message *message = mPendingRequests.GetHead();
     Message *nextMessage = NULL;
     Ip6::MessageInfo messageInfo;
+
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: ReTx Timer fired\n");
+#endif
 
     while (message != NULL)
     {
@@ -581,7 +585,7 @@ void Coap::ProcessReceivedResponse(Header &aResponseHeader, Message &aMessage,
     message = FindRelatedRequest(aResponseHeader, aMessageInfo, requestHeader, coapMetadata);
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Rx Response\n");
+    printf("[OT-COAP]: Rx Resp\n");
 #endif
 
     if (message == NULL)
@@ -869,6 +873,7 @@ void ResponsesQueue::EnqueueResponse(Message &aMessage, const Ip6::MessageInfo &
     default:
         ExitNow();
     }
+printf("xxxx\n");
 
     mQueue.GetInfo(messageCount, bufferCount);
 
@@ -879,13 +884,15 @@ void ResponsesQueue::EnqueueResponse(Message &aMessage, const Ip6::MessageInfo &
 
     copy = aMessage.Clone();
     VerifyOrExit(copy != NULL);
-
     enqueuedResponseHeader.AppendTo(*copy);
     mQueue.Enqueue(*copy);
 
     if (!mTimer.IsRunning())
     {
         mTimer.Start(TimerMilli::SecToMsec(kExchangeLifetime));
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: mTimer set %lu\n", TimerMilli::SecToMsec(kExchangeLifetime));
+#endif
     }
 
 exit:
@@ -933,6 +940,10 @@ void ResponsesQueue::HandleTimer(void)
 {
     Message               *message;
     EnqueuedResponseHeader enqueuedResponseHeader;
+
+#if ENABLE_DEBUG
+    printf("[OT-COAP]: mTimer fired\n");
+#endif
 
     while ((message = mQueue.GetHead()) != NULL)
     {

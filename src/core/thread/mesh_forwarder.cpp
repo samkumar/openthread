@@ -606,7 +606,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
         {
         case Message::kTypeIp6:
 #if ENABLE_DEBUG
-            printf("[OT-MeshForwarder]: Tx IPv6 msg ");
+            printf("[OT-MF]: Tx IPv6 msg ");
 #endif
             error = UpdateIp6Route(*curMessage);
 
@@ -619,7 +619,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
 
         case Message::kType6lowpan:
 #if ENABLE_DEBUG
-            printf("[OT-MeshForwarder]: Tx 6LoWPAN msg\n");
+            printf("[OT-MF]: Tx 6LoWPAN msg\n");
 #endif
             error = UpdateMeshRoute(*curMessage);
             break;
@@ -630,7 +630,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
             Neighbor *parent = netif.GetMle().GetParent();
 
 #if ENABLE_DEBUG
-            printf("[OT-MeshForwarder]: Tx Data poll msg\n");
+            printf("[OT-MF]: Tx Data poll msg\n");
 #endif
             if ((parent != NULL) && (parent->IsStateValidOrRestoring()))
             {
@@ -1818,6 +1818,9 @@ void MeshForwarder::HandleSentFrame(Mac::Frame &aFrame, otError aError)
     if (mSendMessage->GetDirectTransmission() == false && mSendMessage->IsChildPending() == false)
     {
         mSendQueue.Dequeue(*mSendMessage);
+/*#if ENABLE_DEBUG
+        printf("[OT-MF] Tx End\n");
+#endif*/
         mSendMessage->Free();
         mSendMessage = NULL;
         mMessageNextOffset = 0;

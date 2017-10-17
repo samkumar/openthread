@@ -1317,7 +1317,7 @@ void Mac::SentFrame(otError aError)
     printf("Uni: (%lu,%lu,%lu)/%lu\nBro: %lu\n", mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
            mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel,
            mCounters.mTxAckRequested, mCounters.mTxNoAckRequested);
-    printf("-----------------\n\n");
+    printf("-----------------\n");
 #endif    
 
     switch (mOperation)

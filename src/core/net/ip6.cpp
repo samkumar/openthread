@@ -845,10 +845,21 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 
 exit:
 
+/*#if ENABLE_DEBUG
+    printf("[OT-IPv6] Rx End (%u,%u)", tunnel, forward);
+#endif*/
     if (!tunnel && (error != OT_ERROR_NONE || !forward))
     {
+/*#if ENABLE_DEBUG
+    printf(" -\n");
+#endif*/
         aMessage.Free();
     }
+/*#if ENABLE_DEBUG
+    else {
+        printf("\n");
+    }
+#endif*/
 
     otLogFuncExitErr(error);
     return error;
