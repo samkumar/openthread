@@ -4115,33 +4115,20 @@ otError MleRouter::SendAddressSolicit(ThreadStatusTlv::Status aStatus)
 
     VerifyOrExit((message = netif.GetCoap().NewMessage(header)) != NULL, error = OT_ERROR_NO_BUFS);
 
-#if ENABLE_DEBUG
-    printf("[OT-MLERouter]: Make AddrSol init %u\n", message->GetLength());
-#endif
-
     macAddr64Tlv.Init();
     macAddr64Tlv.SetMacAddr(*netif.GetMac().GetExtAddress());
     SuccessOrExit(error = message->Append(&macAddr64Tlv, sizeof(macAddr64Tlv)));
-#if ENABLE_DEBUG
-    printf("[OT-MLERouter]: Make AddrSol macAddr64Tlv %u -> %u\n", sizeof(macAddr64Tlv), message->GetLength());
-#endif
 
     if (IsRouterIdValid(mPreviousRouterId))
     {
         rlocTlv.Init();
         rlocTlv.SetRloc16(GetRloc16(mPreviousRouterId));
         SuccessOrExit(error = message->Append(&rlocTlv, sizeof(rlocTlv)));
-#if ENABLE_DEBUG
-    printf("[OT-MLERouter]: Make AddrSol rlocTlv %u -> %u\n", sizeof(rlocTlv), message->GetLength());
-#endif
     }
 
     statusTlv.Init();
     statusTlv.SetStatus(aStatus);
     SuccessOrExit(error = message->Append(&statusTlv, sizeof(statusTlv)));
-#if ENABLE_DEBUG
-    printf("[OT-MLERouter]: Make AddrSol statusTlv %u -> %u\n", sizeof(statusTlv), message->GetLength());
-#endif
 
     SuccessOrExit(error = GetLeaderAddress(messageInfo.GetPeerAddr()));
     messageInfo.SetSockAddr(GetMeshLocal16());
