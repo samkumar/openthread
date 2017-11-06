@@ -47,7 +47,11 @@
 #include "thread/mle.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
 #define ENABLE_DEBUG (1)
+#endif
 
 namespace ot {
 

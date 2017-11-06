@@ -49,7 +49,11 @@
 #include "net/udp6.hpp"
 #include "thread/mle.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
 #define ENABLE_DEBUG (1)
+#endif
 
 namespace ot {
 namespace Ip6 {

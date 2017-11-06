@@ -48,7 +48,11 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
 #define ENABLE_DEBUG (1)
+#endif
 
 namespace ot {
 namespace NetworkData {
