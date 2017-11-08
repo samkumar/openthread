@@ -1259,7 +1259,7 @@ void Mac::SentFrame(otError aError)
                      sendFrame.ToInfoString(stringBuffer, sizeof(stringBuffer)));
         otDumpDebgMac(GetInstance(), "TX ERR", sendFrame.GetHeader(), 16);
 #if ENABLE_DEBUG
-        printf("[OT-MAC]: Tx Failed\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-MAC]: Tx Failed\n");
 #endif
 
         if (!RadioSupportsRetries() &&
@@ -1317,11 +1317,13 @@ void Mac::SentFrame(otError aError)
     }
 
 #if ENABLE_DEBUG
-    printf("--- [OT-Link] ---\n");
-    printf("Uni: (%lu,%lu,%lu)/%lu\nBro: %lu\n", mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "--- [OT-Link] ---\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Uni: (%lu,%lu,%lu)/%lu\n", 
+           mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
            mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel,
-           mCounters.mTxAckRequested, mCounters.mTxNoAckRequested);
-    printf("-----------------\n");
+           mCounters.mTxAckRequested);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Bro: %lu\n", mCounters.mTxNoAckRequested); 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "-----------------\n");
 #endif    
 
     switch (mOperation)
@@ -1585,7 +1587,7 @@ void Mac::ReceiveDoneTask(Frame *aFrame, otError aError)
     case sizeof(ShortAddress):
         otLogDebgMac(GetInstance(), "Received frame from short address 0x%04x", srcaddr.mShortAddress);
 #if ENABLE_DEBUG
-        printf("[OT-MAC]: Rx pkt from short addr 0x%04x\n", srcaddr.mShortAddress);
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-MAC]: Rx pkt from short addr 0x%04x\n", srcaddr.mShortAddress);
 #endif
 
         if (neighbor == NULL)

@@ -610,7 +610,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
         {
         case Message::kTypeIp6:
 #if ENABLE_DEBUG
-            printf("[OT-MF]: Tx IPv6 msg ");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx IPv6 msg ");
 #endif
             error = UpdateIp6Route(*curMessage);
 
@@ -623,7 +623,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
 
         case Message::kType6lowpan:
 #if ENABLE_DEBUG
-            printf("[OT-MF]: Tx 6LoWPAN msg\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx 6LoWPAN msg\n");
 #endif
             error = UpdateMeshRoute(*curMessage);
             break;
@@ -634,7 +634,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
             Neighbor *parent = netif.GetMle().GetParent();
 
 #if ENABLE_DEBUG
-            printf("[OT-MF]: Tx Data poll msg\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx Data poll msg\n");
 #endif
             if ((parent != NULL) && (parent->IsStateValidOrRestoring()))
             {
@@ -646,7 +646,7 @@ Message *MeshForwarder::GetDirectTransmission(void)
                     mMacDest.mLength = sizeof(mMacDest.mShortAddress);
                     mMacDest.mShortAddress = parent->GetRloc16();
 #if ENABLE_DEBUG
-                    printf("    -- %4x (FinalDest)\n", mMacDest.mShortAddress);
+                    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (FinalDest)\n", mMacDest.mShortAddress);
 #endif
                 }
                 else
@@ -853,17 +853,17 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
 #if ENABLE_DEBUG
     uint16_t addr[8];
-    printf("to Dest ");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Dest ");
     for (int i=0; i<8; i++) {
         addr[i] = ip6Header.GetDestination().mFields.m16[i];
         if (addr[i] != 0) {
-            printf("%4x", HostSwap16(addr[i]));
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "%4x", HostSwap16(addr[i]));
         }
         if (i < 7) {
-            printf(":");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, ":");
         }
     }
-    printf("\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
 #endif
 
     // 2. Choose correct MAC Destination Address.
@@ -874,7 +874,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
         if (ip6Header.GetDestination().IsLinkLocal() || ip6Header.GetDestination().IsLinkLocalMulticast())
         {
 #if ENABLE_DEBUG
-            printf("to LinkLocal\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
 #endif
             GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
         }
@@ -889,7 +889,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     if (ip6Header.GetDestination().IsMulticast())
     {
 #if ENABLE_DEBUG
-        printf("to Multicast\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Multicast\n");
 #endif
 
         mMacDest.mLength = sizeof(mMacDest.mShortAddress);
@@ -908,7 +908,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     else if (ip6Header.GetDestination().IsLinkLocal())
     {
 #if ENABLE_DEBUG
-        printf("to LinkLocal\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
 #endif
         GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
     }
@@ -969,7 +969,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
             {
                 // TODO: support ALOC for Service, Commissioner, Neighbor Discovery Agent
 #if ENABLE_DEBUG
-                printf("ERROR\n");
+                otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "ERROR\n");
 #endif
                 ExitNow(error = OT_ERROR_DROP);
             }
@@ -977,21 +977,21 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
         else if ((neighbor = netif.GetMle().GetNeighbor(ip6Header.GetDestination())) != NULL)
         {
 #if ENABLE_DEBUG                    
-            printf("to a neighbor node\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a neighbor node\n");
 #endif
             mMeshDest = neighbor->GetRloc16();
         }
         else if (netif.GetNetworkDataLeader().IsOnMesh(ip6Header.GetDestination()))
         {
 #if ENABLE_DEBUG                    
-            printf("to a mesh node\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a mesh node\n");
 #endif
             SuccessOrExit(error = netif.GetAddressResolver().Resolve(ip6Header.GetDestination(), mMeshDest));
         }
         else
         {
 #if ENABLE_DEBUG                    
-            printf("to an external node\n");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to an external node\n");
 #endif
             netif.GetNetworkDataLeader().RouteLookup(
                 ip6Header.GetSource(),
@@ -1035,7 +1035,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
         if (mMacDest.mShortAddress == mMeshDest) {
 #if ENABLE_DEBUG
-            printf("     -- %4x (FinalDest)\n", mMacDest.mShortAddress);
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "     -- %4x (FinalDest)\n", mMacDest.mShortAddress);
 #endif
         } else {
             // destination is not neighbor
@@ -1044,7 +1044,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
             mMacSource.mShortAddress = mMeshSource;
             mAddMeshHeader = true;
 #if ENABLE_DEBUG
-            printf("    -- %4x (Intermediate)\n", mMacDest.mShortAddress);
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Intermediate)\n", mMacDest.mShortAddress);
 #endif
         }       
 
@@ -2425,7 +2425,7 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otTh
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d, rss:%d", child->GetRloc16(), indirectMsgCount,
                  aLinkInfo.mRss);
 #if ENABLE_DEBUG
-    printf("[OT-MeshForward]: Rx Data Poll, src:0x%04x, qed_msgs:%d\n", child->GetRloc16(), indirectMsgCount);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MeshForward]: Rx Data Poll, src:0x%04x, qed_msgs:%d\n", child->GetRloc16(), indirectMsgCount);
 #endif
 
 exit:

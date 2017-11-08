@@ -724,17 +724,17 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 
 #if ENABLE_DEBUG
     uint16_t addr[8];
-    printf("[OT-IPv6] From Src ");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] From Src ");
     for (int i=0; i<8; i++) {
         addr[i] = header.GetSource().mFields.m16[i];
         if (addr[i] != 0) {
-            printf("%4x", HostSwap16(addr[i]));
+           otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "%4x", HostSwap16(addr[i]));
         }
         if (i < 7) {
-            printf(":");
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, ":");
         }
     }
-    printf("\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
 #endif
 
     messageInfo.SetPeerAddr(header.GetSource());

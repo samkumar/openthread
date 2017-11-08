@@ -135,7 +135,7 @@ exit:
     case OT_ERROR_NONE:
         otLogDebgMac(GetInstance(), "Sending data poll");
 #if ENABLE_DEBUG
-        printf("[OT-DataPollMGR]: Tx Data Poll\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-DataPollMGR]: Tx Data Poll\n");
 #endif
         if (mNoBufferRetxMode == true)
         {
@@ -352,7 +352,7 @@ void DataPollManager::ScheduleNextPoll(PollPeriodSelector aPollPeriodSelector)
     }
 
 #if ENABLE_DEBUG
-    printf("[OT-DataPollMGR]: Poll period %lu\n", mPollPeriod);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-DataPollMGR]: Poll period %lu\n", mPollPeriod);
 #endif
 
     if (mTimer.IsRunning())
