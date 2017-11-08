@@ -134,7 +134,7 @@ otError UdpSocket::SendTo(Message &aMessage, const MessageInfo &aMessageInfo)
     udpHeader.SetLength(sizeof(udpHeader) + aMessage.GetLength());
     udpHeader.SetChecksum(0);
 #if ENABLE_DEBUG
-    printf("\n\n[OT-UDP]: Tx Port %4x to %4x\n", GetSockName().mPort, messageInfoLocal.mPeerPort);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n\n[OT-UDP]: Tx Port %4x to %4x\n", GetSockName().mPort, messageInfoLocal.mPeerPort);
 #endif
     SuccessOrExit(error = aMessage.Prepend(&udpHeader, sizeof(udpHeader)));
     aMessage.SetOffset(0);
@@ -244,7 +244,7 @@ otError Udp::HandleMessage(Message &aMessage, MessageInfo &aMessageInfo)
     aMessageInfo.mPeerPort = udpHeader.GetSourcePort();
     aMessageInfo.mSockPort = udpHeader.GetDestinationPort();
 #if ENABLE_DEBUG
-    printf("[OT-UDP]: Rx Port %4x to %4x\n", aMessageInfo.mPeerPort, aMessageInfo.mSockPort);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-UDP]: Rx Port %4x to %4x\n", aMessageInfo.mPeerPort, aMessageInfo.mSockPort);
 #endif
     // find socket
     for (UdpSocket *socket = mSockets; socket; socket = socket->GetNext())

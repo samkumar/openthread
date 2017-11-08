@@ -231,7 +231,7 @@ otError Coap::SendEmptyMessage(Header::Type aType, const Header &aRequestHeader,
     Message *message = NULL;
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Tx EmptyMsg\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Tx EmptyMsg\n");
 #endif
     VerifyOrExit(aRequestHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE, error = OT_ERROR_INVALID_ARGS);
 
@@ -261,7 +261,7 @@ otError Coap::SendHeaderResponse(Header::Code aCode, const Header &aRequestHeade
     Message *message = NULL;
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Tx HeaderResp\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Tx HeaderResp\n");
 #endif
 
     VerifyOrExit(aRequestHeader.IsRequest(), error = OT_ERROR_INVALID_ARGS);
@@ -327,7 +327,7 @@ void Coap::HandleRetransmissionTimer(void)
     Ip6::MessageInfo messageInfo;
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: ReTx Timer fired\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: ReTx Timer fired\n");
 #endif
 
     while (message != NULL)
@@ -589,7 +589,7 @@ void Coap::ProcessReceivedResponse(Header &aResponseHeader, Message &aMessage,
     message = FindRelatedRequest(aResponseHeader, aMessageInfo, requestHeader, coapMetadata);
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Rx Resp\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Rx Resp\n");
 #endif
 
     if (message == NULL)
@@ -667,7 +667,7 @@ void Coap::ProcessReceivedRequest(Header &aHeader, Message &aMessage, const Ip6:
     Message *cachedResponse = NULL;
     otError error = OT_ERROR_NOT_FOUND;
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: Rx Req\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Rx Req\n");
 #endif
     if (mInterceptor != NULL)
     {
@@ -877,7 +877,6 @@ void ResponsesQueue::EnqueueResponse(Message &aMessage, const Ip6::MessageInfo &
     default:
         ExitNow();
     }
-printf("xxxx\n");
 
     mQueue.GetInfo(messageCount, bufferCount);
 
@@ -895,7 +894,8 @@ printf("xxxx\n");
     {
         mTimer.Start(TimerMilli::SecToMsec(kExchangeLifetime));
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: mTimer set %lu\n", TimerMilli::SecToMsec(kExchangeLifetime));
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: mTimer set %lu\n",
+              TimerMilli::SecToMsec(kExchangeLifetime));
 #endif
     }
 
@@ -946,7 +946,7 @@ void ResponsesQueue::HandleTimer(void)
     EnqueuedResponseHeader enqueuedResponseHeader;
 
 #if ENABLE_DEBUG
-    printf("[OT-COAP]: mTimer fired\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: mTimer fired\n");
 #endif
 
     while ((message = mQueue.GetHead()) != NULL)

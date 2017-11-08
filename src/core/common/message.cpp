@@ -122,7 +122,7 @@ Buffer *MessagePool::NewBuffer(void)
         buffer->SetNextBuffer(NULL);
         mNumFreeBuffers--;
 #if ENABLE_DEBUG
-        printf("[OT-MSG] B: %u->%u\n", mNumFreeBuffers+1, mNumFreeBuffers);
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MSG] B: %u->%u\n", mNumFreeBuffers+1, mNumFreeBuffers);
 #endif
     }
 
@@ -132,7 +132,7 @@ Buffer *MessagePool::NewBuffer(void)
     {
         otLogInfoMem(GetInstance(), "No available message buffer");
 #if ENABLE_DEBUG
-        printf("\n[OT-MSG] No B!\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
 #endif
 
     }
@@ -152,7 +152,7 @@ void MessagePool::FreeBuffers(Buffer *aBuffer)
         mFreeBuffers = aBuffer;
         mNumFreeBuffers++;
 #if ENABLE_DEBUG
-        printf("[OT-MSG] B %u->%u\n", mNumFreeBuffers-1, mNumFreeBuffers);
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MSG] B %u->%u\n", mNumFreeBuffers-1, mNumFreeBuffers);
 #endif
 
 #endif // OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
@@ -180,7 +180,7 @@ exit:
     else
     {
 #if ENABLE_DEBUG
-        printf("\n[OT-MSG] No B!\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
 #endif
         return OT_ERROR_NO_BUFS;
     }
@@ -321,7 +321,7 @@ otError Message::SetLength(uint16_t aLength)
         bufs -= (((totalLengthCurrent - kHeadBufferDataSize) - 1) / kBufferDataSize) + 1;
     }
 
-    //printf("(%u %u %u) (%u %u %u %u)\n", kHeadBufferDataSize, kBufferDataSize, kBufferSize, aLength, totalLengthRequest, totalLengthCurrent, bufs);
+    //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "(%u %u %u) (%u %u %u %u)\n", kHeadBufferDataSize, kBufferDataSize, kBufferSize, aLength, totalLengthRequest, totalLengthCurrent, bufs);
 
     SuccessOrExit(error = GetMessagePool()->ReclaimBuffers(bufs));
 
