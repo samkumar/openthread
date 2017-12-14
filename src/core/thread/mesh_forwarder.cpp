@@ -2425,7 +2425,7 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otTh
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d, rss:%d", child->GetRloc16(), indirectMsgCount,
                  aLinkInfo.mRss);
 #if ENABLE_DEBUG
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MeshForward]: Rx Data Poll, src:0x%04x, qed_msgs:%d\n", child->GetRloc16(), indirectMsgCount);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Rx Data Poll, src:0x%04x, qed_msgs:%d\n", child->GetRloc16(), indirectMsgCount);
 #endif
 
 exit:
