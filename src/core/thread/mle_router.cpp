@@ -1795,6 +1795,7 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                      mRouters[i].GetCost(),
                      GetLinkCost(i), GetLinkCost(mRouters[i].GetNextHop())); 
             borderRouterLC = GetLinkCost(i);
+            borderRouterRC = mRouters[i].GetCost();
             myRloc = HostSwap16(GetMeshLocal16().mFields.m16[7]);
             if (borderRouterLC == 16) {   
                 if (GetRloc16(mRouters[i].GetNextHop()) != nextHopRloc) {
@@ -1802,6 +1803,7 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                 }
                 nextHopRloc = GetRloc16(mRouters[i].GetNextHop());
                 borderRouterLC = GetLinkCost(mRouters[i].GetNextHop());                
+                borderRouterRC = mRouters[mRouters[i].GetNextHop()].GetCost();
             } else {
                nextHopRloc = 0x8800; 
             }

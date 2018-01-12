@@ -81,6 +81,7 @@
 #endif
 extern uint8_t borderRouteChangeCnt; // border router next hop change counter
 extern uint8_t borderRouterLC; // link cost for border router next hop
+extern uint8_t borderRouterRC; // path cost for border router next hop
 extern uint32_t addressMsgCnt; // address resolution packets counter
 extern uint32_t joiningMsgCnt; // joining packets counter
 extern uint32_t routingMsgCnt; // routing packets counter
@@ -92,5 +93,6 @@ extern uint32_t packetBusyChannelCnt; // packet fail (busy channel) counter
 extern uint32_t broadcastCnt; // broadcast packets counter
 extern uint16_t myRloc; // RLOC16 of current node
 extern uint16_t nextHopRloc; // RLOC16 of next hop to border router
+extern uint8_t debugNumFreeBuffers; // number of free buffers in OpenThread message queue
 
 #endif  // DEBUG_HPP_
