@@ -123,6 +123,7 @@ Buffer *MessagePool::NewBuffer(void)
         mNumFreeBuffers--;
 #if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MSG] B: %u->%u\n", mNumFreeBuffers+1, mNumFreeBuffers);
+        debugNumFreeBuffers = mNumFreeBuffers;
 #endif
     }
 
