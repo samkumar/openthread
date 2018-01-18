@@ -43,7 +43,7 @@
 #include "common/logging.hpp"
 #include "net/ip6.hpp"
 
-#define ENABLE_DEBUG (1)
+#define ENABLE_DEBUG (0)
 
 namespace ot {
 

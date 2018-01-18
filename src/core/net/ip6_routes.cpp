@@ -52,7 +52,7 @@ Routes::Routes(Ip6 &aIp6):
 otError Routes::Add(Route &aRoute)
 {
     otError error = OT_ERROR_NONE;
-
+printf("****** [OT-Ip6] Add! ********\n");
     for (Route *cur = mRoutes; cur; cur = cur->mNext)
     {
         VerifyOrExit(cur != &aRoute, error = OT_ERROR_ALREADY);
@@ -94,10 +94,12 @@ int8_t Routes::Lookup(const Address &aSource, const Address &aDestination)
     uint8_t prefixMatch;
     int8_t rval = -1;
 
+printf("\n\n[OT-Ip6] Start to match\n");
+
     for (Route *cur = mRoutes; cur; cur = cur->mNext)
     {
         prefixMatch = cur->mPrefix.PrefixMatch(aDestination);
-
+printf("[OT-Ip6] Match %u\n", prefixMatch);
         if (prefixMatch < cur->mPrefixLength)
         {
             continue;

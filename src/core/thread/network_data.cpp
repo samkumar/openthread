@@ -49,7 +49,7 @@
 #include "thread/thread_uri_paths.hpp"
 
 #if OPENTHREAD_ENABLE_BORDER_ROUTER
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #else
 #define ENABLE_DEBUG (1)
 #endif
@@ -698,7 +698,7 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
 
     otLogInfoNetData(GetInstance(), "Sent server data notification");
 #if ENABLE_DEBUG
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-NetworkData]: Tx Server Data Notification\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND]: Tx SD Notification\n");
 #endif
 
 exit:

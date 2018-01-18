@@ -53,6 +53,12 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -421,7 +427,9 @@ void LeaderBase::SetNetworkData(uint8_t aVersion, uint8_t aStableVersion, bool a
     {
         RemoveTemporaryData(mTlvs, mLength);
     }
-printf("[OT-ND-LD] SetNetworkData\n");
+#if ENABLE_DEBUG
+    printf("[OT-ND-Le] SetNetworkData\n");
+#endif
     otDumpDebgNetData(GetInstance(), "set network data", mTlvs, mLength);
 
     GetNetif().SetStateChangedFlags(OT_CHANGED_THREAD_NETDATA);

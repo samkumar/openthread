@@ -42,6 +42,7 @@
 #include "thread/thread_netif.hpp"
 
 #if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (1)
 
 namespace ot {
 namespace NetworkData {
@@ -133,7 +134,9 @@ otError Local::AddHasRoutePrefix(const uint8_t *aPrefix, uint8_t aPrefixLength, 
     }
 
     ClearResubmitDelayTimer();
-printf("[ND-local] Add Route Done\n");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Lo]: Add HasRoute\n");
+#endif
     otDumpDebgNetData(GetInstance(), "add route done", mTlvs, mLength);
     return OT_ERROR_NONE;
 }
