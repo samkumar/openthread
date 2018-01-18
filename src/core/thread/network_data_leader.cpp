@@ -421,7 +421,7 @@ void LeaderBase::SetNetworkData(uint8_t aVersion, uint8_t aStableVersion, bool a
     {
         RemoveTemporaryData(mTlvs, mLength);
     }
-
+printf("[OT-ND-LD] SetNetworkData\n");
     otDumpDebgNetData(GetInstance(), "set network data", mTlvs, mLength);
 
     GetNetif().SetStateChangedFlags(OT_CHANGED_THREAD_NETDATA);
