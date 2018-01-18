@@ -112,6 +112,7 @@ exit:
 
 otError otBorderRouterAddRoute(otInstance *aInstance, const otExternalRouteConfig *aConfig)
 {
+printf("[BR API] BR Add Route!\n");
     return aInstance->mThreadNetif.GetNetworkDataLocal().AddHasRoutePrefix(aConfig->mPrefix.mPrefix.mFields.m8,
                                                                            aConfig->mPrefix.mLength,
                                                                            aConfig->mPreference, aConfig->mStable);

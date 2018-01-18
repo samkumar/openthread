@@ -133,7 +133,7 @@ otError Local::AddHasRoutePrefix(const uint8_t *aPrefix, uint8_t aPrefixLength, 
     }
 
     ClearResubmitDelayTimer();
-
+printf("[ND-local] Add Route Done\n");
     otDumpDebgNetData(GetInstance(), "add route done", mTlvs, mLength);
     return OT_ERROR_NONE;
 }

@@ -697,6 +697,7 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
     }
 
     otLogInfoNetData(GetInstance(), "Sent server data notification");
+printf("[OT-ND]: Tx Server Data Note\n");
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-NetworkData]: Tx Server Data Notification\n");
 #endif
