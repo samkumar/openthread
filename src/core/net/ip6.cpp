@@ -819,6 +819,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     if (forward)
     {
         forwardInterfaceId = FindForwardInterfaceId(messageInfo);
+        forwardInterfaceId = 1;
 #if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] IfID: %u\n", forwardInterfaceId);
 #endif
