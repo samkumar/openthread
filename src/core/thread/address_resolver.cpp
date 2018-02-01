@@ -349,12 +349,13 @@ otError AddressResolver::SendAddressQuery(const Ip6::Address &aEid)
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address query for %s", aEid.ToString(stringBuffer, sizeof(stringBuffer)));
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Query\n");
-    addressMsgCnt++;
 #endif
 
     OT_UNUSED_VARIABLE(stringBuffer);
@@ -496,7 +497,6 @@ otError AddressResolver::SendAddressError(const ThreadTargetTlv &aTarget, const 
 
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Error\n");
-    addressMsgCnt++;
 #endif
 
     header.Init(aDestination == NULL ? OT_COAP_TYPE_NON_CONFIRMABLE : OT_COAP_TYPE_CONFIRMABLE,
@@ -523,6 +523,8 @@ otError AddressResolver::SendAddressError(const ThreadTargetTlv &aTarget, const 
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address error for target %s",
@@ -741,7 +743,6 @@ void AddressResolver::SendAddressQueryResponse(const ThreadTargetTlv &aTargetTlv
 
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Notification\n");
-    addressMsgCnt++;
 #endif
 
     SuccessOrExit(error = message->Append(&aTargetTlv, sizeof(aTargetTlv)));
@@ -760,6 +761,8 @@ void AddressResolver::SendAddressQueryResponse(const ThreadTargetTlv &aTargetTlv
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address notification for target %s",

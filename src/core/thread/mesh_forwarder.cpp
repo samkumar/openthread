@@ -1812,10 +1812,16 @@ void MeshForwarder::HandleSentFrame(Mac::Frame &aFrame, otError aError)
         if (aError == OT_ERROR_NONE)
         {
             mIpCounters.mTxSuccess++;
+
+            /* Overhead statistics */
+            Ipv6TxSuccCnt++; 
         }
         else
         {
             mIpCounters.mTxFailure++;
+
+            /* Overhead statistics */
+            Ipv6TxFailCnt++; 
         }
     }
 
@@ -2290,6 +2296,9 @@ void MeshForwarder::ClearReassemblyList(void)
         LogIp6Message(kMessageReassemblyDrop, *message, NULL, OT_ERROR_NO_FRAME_RECEIVED);
         mIpCounters.mRxFailure++;
 
+        /* Overhead statistics */
+        Ipv6RxFailCnt++;
+
         message->Free();
     }
 }
@@ -2319,6 +2328,9 @@ void MeshForwarder::HandleReassemblyTimer(void)
 
             LogIp6Message(kMessageReassemblyDrop, *message, NULL, OT_ERROR_REASSEMBLY_TIMEOUT);
             mIpCounters.mRxFailure++;
+
+            /* Overhead statistics */
+            Ipv6RxFailCnt++;
 
             message->Free();
         }
@@ -2395,6 +2407,9 @@ otError MeshForwarder::HandleDatagram(Message &aMessage, const otThreadLinkInfo 
 
     LogIp6Message(kMessageReceive, aMessage, &aMacSource, OT_ERROR_NONE);
     mIpCounters.mRxSuccess++;
+    
+    /* Overhead statistics */
+    Ipv6RxSuccCnt++;
 
     return netif.GetIp6().HandleDatagram(aMessage, &netif, netif.GetInterfaceId(), &aLinkInfo, false);
 }

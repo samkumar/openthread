@@ -128,6 +128,8 @@ otError NetworkDiagnostic::SendDiagnosticGet(const Ip6::Address &aDestination, c
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo, handler, this));
 
     otLogInfoNetDiag(GetInstance(), "Sent diagnostic get");
@@ -472,6 +474,8 @@ void NetworkDiagnostic::HandleDiagnosticGetQuery(Coap::Header &aHeader, Message 
     // DIAG_GET.qry may be sent as a confirmable message.
     if (aHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE)
     {
+        /* overhead statistics */
+        netdataMsgCnt++;
         if (netif.GetCoap().SendEmptyAck(aHeader, aMessageInfo) == OT_ERROR_NONE)
         {
             otLogInfoNetDiag(GetInstance(), "Sent diagnostic get query acknowledgment");
@@ -501,6 +505,8 @@ void NetworkDiagnostic::HandleDiagnosticGetQuery(Coap::Header &aHeader, Message 
         message->SetLength(header.GetLength() - 1);
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo, NULL, this));
 
     otLogInfoNetDiag(GetInstance(), "Sent diagnostic get answer");
@@ -556,6 +562,8 @@ void NetworkDiagnostic::HandleDiagnosticGetRequest(Coap::Header &aHeader, Messag
         message->SetLength(header.GetLength() - 1);
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoNetDiag(GetInstance(), "Sent diagnostic get response");
@@ -602,6 +610,8 @@ otError NetworkDiagnostic::SendDiagnosticReset(const Ip6::Address &aDestination,
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoNetDiag(GetInstance(), "Sent network diagnostic reset");
@@ -663,6 +673,8 @@ void NetworkDiagnostic::HandleDiagnosticReset(Coap::Header &aHeader, Message &aM
         }
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(netif.GetCoap().SendEmptyAck(aHeader, aMessageInfo));
 
     otLogInfoNetDiag(GetInstance(), "Sent diagnostic reset acknowledgment");

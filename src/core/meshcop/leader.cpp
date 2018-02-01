@@ -154,6 +154,8 @@ otError Leader::SendPetitionResponse(const Coap::Header &aRequestHeader, const I
         SuccessOrExit(error = message->Append(&sessionId, sizeof(sessionId)));
     }
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
 #if ENABLE_DEBUG
@@ -234,6 +236,8 @@ otError Leader::SendKeepAliveResponse(const Coap::Header &aRequestHeader, const 
     state.SetState(aState);
     SuccessOrExit(error = message->Append(&state, sizeof(state)));
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent keep alive response");
@@ -268,6 +272,9 @@ otError Leader::SendDatasetChanged(const Ip6::Address &aAddress)
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerAddr(aAddress);
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset changed");

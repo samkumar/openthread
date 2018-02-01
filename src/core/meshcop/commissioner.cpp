@@ -56,6 +56,7 @@
 #include "thread/thread_uri_paths.hpp"
 
 #if OPENTHREAD_FTD && OPENTHREAD_ENABLE_COMMISSIONER
+#define ENABLE_DEBUG (1)
 
 using ot::Encoding::BigEndian::HostSwap64;
 
@@ -431,10 +432,17 @@ otError Commissioner::SendMgmtCommissionerGetRequest(const uint8_t *aTlvs,
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo,
                                                       Commissioner::HandleMgmtCommissionerGetResponse, this));
 
     otLogInfoMeshCoP(GetInstance(), "sent MGMT_COMMISSIONER_GET.req to leader");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx MGMT_COMM_GET Req\n");
+#endif
+
 
 exit:
 
@@ -465,6 +473,10 @@ void Commissioner::HandleMgmtCommissisonerGetResponse(Coap::Header *aHeader, Mes
 
     VerifyOrExit(aResult == OT_ERROR_NONE && aHeader->GetCode() == OT_COAP_CODE_CHANGED);
     otLogInfoMeshCoP(GetInstance(), "received MGMT_COMMISSIONER_GET response");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx MGMT_COMM_GET Resp\n");
+#endif
+
 
 exit:
     otLogFuncExit();
@@ -532,9 +544,16 @@ otError Commissioner::SendMgmtCommissionerSetRequest(const otCommissioningDatase
         message->SetLength(message->GetLength() - 1);
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx MGMT_COMM_SET Req\n");
+#endif
+
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo,
                                                       Commissioner::HandleMgmtCommissionerSetResponse, this));
 
@@ -569,6 +588,10 @@ void Commissioner::HandleMgmtCommissisonerSetResponse(Coap::Header *aHeader, Mes
 
     VerifyOrExit(aResult == OT_ERROR_NONE && aHeader->GetCode() == OT_COAP_CODE_CHANGED);
     otLogInfoMeshCoP(GetInstance(), "received MGMT_COMMISSIONER_SET response");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx MGMT_COMM_SET Resp\n");
+#endif
+
 
 exit:
     otLogFuncExit();
@@ -602,10 +625,17 @@ otError Commissioner::SendPetition(void)
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo,
                                                       Commissioner::HandleLeaderPetitionResponse, this));
 
     otLogInfoMeshCoP(GetInstance(), "sent petition");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx Petition\n");
+#endif
+
 
 exit:
 
@@ -642,6 +672,10 @@ void Commissioner::HandleLeaderPetitionResponse(Coap::Header *aHeader, Message *
     VerifyOrExit(aResult == OT_ERROR_NONE && aHeader->GetCode() == OT_COAP_CODE_CHANGED, retransmit = true);
 
     otLogInfoMeshCoP(GetInstance(), "received Leader Petition response");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx L-PetitionResp\n");
+#endif
+
 
     SuccessOrExit(Tlv::GetTlv(*aMessage, Tlv::kState, sizeof(state), state));
     VerifyOrExit(state.IsValid());
@@ -707,10 +741,17 @@ otError Commissioner::SendKeepAlive(void)
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo,
                                                       Commissioner::HandleLeaderKeepAliveResponse, this));
 
     otLogInfoMeshCoP(GetInstance(), "sent keep alive");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx KeepAlive\n");
+#endif
+
 
 exit:
 
@@ -745,6 +786,9 @@ void Commissioner::HandleLeaderKeepAliveResponse(Coap::Header *aHeader, Message 
                  mState = OT_COMMISSIONER_STATE_DISABLED);
 
     otLogInfoMeshCoP(GetInstance(), "received Leader Petition response");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx L-KeepAliveResp\n");
+#endif
 
     SuccessOrExit(Tlv::GetTlv(*aMessage, Tlv::kState, sizeof(state), state));
     VerifyOrExit(state.IsValid());
@@ -785,6 +829,9 @@ void Commissioner::HandleRelayReceive(Coap::Header &aHeader, Message &aMessage, 
 
     otLogFuncEntry();
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx RelayRx\n");
+#endif
     VerifyOrExit(mState == OT_COMMISSIONER_STATE_ACTIVE, error = OT_ERROR_INVALID_STATE);
 
     VerifyOrExit(aHeader.GetType() == OT_COAP_TYPE_NON_CONFIRMABLE &&
@@ -869,11 +916,17 @@ void Commissioner::HandleDatasetChanged(Coap::Header &aHeader, Message &aMessage
                  aHeader.GetCode() == OT_COAP_CODE_POST);
 
     otLogInfoMeshCoP(GetInstance(), "received dataset changed");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx D-changed\n");
+#endif
     OT_UNUSED_VARIABLE(aMessage);
 
     SuccessOrExit(GetNetif().GetCoap().SendEmptyAck(aHeader, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset changed acknowledgment");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx D-changed-ACK\n");
+#endif
 
 exit:
     otLogFuncExit();
@@ -895,6 +948,9 @@ void Commissioner::HandleJoinerFinalize(Coap::Header &aHeader, Message &aMessage
 
     otLogFuncEntry();
     otLogInfoMeshCoP(GetInstance(), "received joiner finalize");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx J-Final\n");
+#endif
 
     if (Tlv::GetTlv(aMessage, Tlv::kProvisioningUrl, sizeof(provisioningUrl), provisioningUrl) == OT_ERROR_NONE)
     {
@@ -958,6 +1014,8 @@ void Commissioner::SendJoinFinalizeResponse(const Coap::Header &aRequestHeader, 
                       message->GetLength() - responseHeader.GetLength());
 #endif
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoapSecure().SendMessage(*message, joinerMessageInfo));
 
     memcpy(extAddr.m8, mJoinerIid, sizeof(extAddr.m8));
@@ -965,6 +1023,9 @@ void Commissioner::SendJoinFinalizeResponse(const Coap::Header &aRequestHeader, 
     RemoveJoiner(&extAddr, kRemoveJoinerDelay);  // remove after kRemoveJoinerDelay (seconds)
 
     otLogInfoMeshCoP(GetInstance(), "sent joiner finalize response");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx J-FanalResp\n");
+#endif
 
 exit:
 
@@ -1036,6 +1097,12 @@ otError Commissioner::SendRelayTransmit(Message &aMessage, const Ip6::MessageInf
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx RelayTx\n");
+#endif
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     aMessage.Free();

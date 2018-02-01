@@ -337,6 +337,9 @@ otError DatasetManager::Register(void)
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset to leader");
@@ -786,6 +789,9 @@ otError DatasetManager::SendSetRequest(const otOperationalDataset &aDataset, con
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset set request to leader");
@@ -839,6 +845,9 @@ otError DatasetManager::SendGetRequest(const uint8_t *aTlvTypes, uint8_t aLength
 
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset get request");
@@ -871,6 +880,8 @@ void DatasetManager::SendSetResponse(const Coap::Header &aRequestHeader, const I
     state.SetState(aState);
     SuccessOrExit(error = message->Append(&state, sizeof(state)));
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset set response");
@@ -938,6 +949,8 @@ void DatasetManager::SendGetResponse(const Coap::Header &aRequestHeader, const I
         message->SetLength(message->GetLength() - 1);
     }
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset get response");

@@ -688,6 +688,9 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     if (mLocal)

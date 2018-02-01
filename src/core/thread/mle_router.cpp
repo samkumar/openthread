@@ -600,12 +600,14 @@ otError MleRouter::SendAdvertisement(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0001);
+
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Advertisement", destination);
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx Ad\n");
-    routingMsgCnt++;
 #endif
 
 exit:
@@ -702,12 +704,13 @@ otError MleRouter::SendLinkRequest(Neighbor *aNeighbor)
         destination.SetIid(aNeighbor->GetExtAddress());
     }
 
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Link Request", destination);
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx L-Req\n");
-    linkMsgCnt++;
 #endif
 
 exit:
@@ -887,6 +890,8 @@ otError MleRouter::SendLinkAccept(const Ip6::MessageInfo &aMessageInfo, Neighbor
         aNeighbor->SetState(Neighbor::kStateLinkRequest);
     }
 
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     if (aMessageInfo.GetSockAddr().IsMulticast())
     {
         SuccessOrExit(error = AddDelayedResponse(*message, aMessageInfo.GetPeerAddr(),
@@ -899,12 +904,12 @@ otError MleRouter::SendLinkAccept(const Ip6::MessageInfo &aMessageInfo, Neighbor
     }
     else
     {
+
         SuccessOrExit(error = SendMessage(*message, aMessageInfo.GetPeerAddr()));
 
         LogMleMessage("Send Link Accept", aMessageInfo.GetPeerAddr());
 #if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx L-Acc\n");
-        linkMsgCnt++;
 #endif
     }
 
@@ -1713,6 +1718,8 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
 
                     if (newCost < curCost && i != aRouterId)
                     {
+                        /* statictics */
+                        routeChangeCnt++;  
                         mRouters[i].SetNextHop(aRouterId);
                         mRouters[i].SetCost(cost);
                     }
@@ -1755,7 +1762,6 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
     otIp6AddressFromString("fdde:ad00:beef:0000:c684:4ab6:ac8f:9fe5", &borderIP);
     otShortAddress borderRloc16;
     GetNetif().GetAddressResolver().Resolve(borderIP, borderRloc16);
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "BR RLOC16: %d\n", borderRloc16);
 #endif
 
 //#if (OPENTHREAD_CONFIG_LOG_MLE && (OPENTHREAD_CONFIG_LOG_LEVEL >= OT_LOG_LEVEL_DEBG))
@@ -1774,29 +1780,14 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                      GetLinkCost(i), mRouters[i].GetLinkInfo().GetLinkQuality(),
                      mRouters[i].GetLinkQualityOut());
 #if ENABLE_DEBUG
-        if (GetRloc16(i) == 0x8800) { 
+        if (GetRloc16(i) == borderRloc16) { 
             otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "RT %x: %x %d %d %d RT\n",
-                     GetRloc16(i),
-                     GetRloc16(mRouters[i].GetNextHop()),
-                     mRouters[i].GetCost(),
-                     GetLinkCost(i), GetLinkCost(mRouters[i].GetNextHop())); 
-        }
-        if (GetLinkCost(i) < 16) {
-            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "NT %x: %d NT\n",
-                     GetRloc16(i), GetLinkCost(i)); 
-        }
-        //mRouters[i].GetLinkInfo().GetLinkQuality(), mRouters[i].GetLinkQualityOut());
-
-        // capture border router routing data        
-        if (GetRloc16(i) == borderRloc16) {
-            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "BR RT %x: %x %d %d %d RT\n",
                      GetRloc16(i),
                      GetRloc16(mRouters[i].GetNextHop()),
                      mRouters[i].GetCost(),
                      GetLinkCost(i), GetLinkCost(mRouters[i].GetNextHop())); 
             borderRouterLC = GetLinkCost(i);
             borderRouterRC = mRouters[i].GetCost();
-            myRloc = HostSwap16(GetMeshLocal16().mFields.m16[7]);
             if (borderRouterLC == 16) {   
                 if (GetRloc16(mRouters[i].GetNextHop()) != nextHopRloc) {
                     borderRouteChangeCnt++;
@@ -1805,12 +1796,20 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
                 borderRouterLC = GetLinkCost(mRouters[i].GetNextHop());                
                 borderRouterRC = mRouters[mRouters[i].GetNextHop()].GetCost();
             } else {
-               nextHopRloc = 0x8800; 
+               nextHopRloc = borderRloc16; 
             }
             otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "Next Hop RLOC: %x\n", nextHopRloc);
         }
+        if (GetLinkCost(i) < 16) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "NT %x: %d NT\n",
+                     GetRloc16(i), GetLinkCost(i)); 
+        }
 #endif
     }
+
+    /* Overhead statistics */
+    myRloc = HostSwap16(GetMeshLocal16().mFields.m16[7]);
+
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "------------------\n\n");
 #endif
@@ -2172,12 +2171,13 @@ otError MleRouter::SendParentResponse(Child *aChild, const ChallengeTlv &aChalle
         delay = (otPlatRandomGet() % kParentResponseMaxDelayAll) + 1;
     }
 
+    /* overhead statistics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = AddDelayedResponse(*message, destination, delay));
 
     LogMleMessage("Delay P-Resp", destination);
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Delay P-Resp\n");
-    joiningMsgCnt++;
 #endif
 
 exit:
@@ -3005,12 +3005,13 @@ otError MleRouter::SendDiscoveryResponse(const Ip6::Address &aDestination, uint1
 
     delay = otPlatRandomGet() % (kDiscoveryMaxJitter + 1);
 
+    /* overhead statistics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = AddDelayedResponse(*message, aDestination, delay));
 
     LogMleMessage("Delay Discovery Response", aDestination);
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Delay Discovery Response\n");
-    joiningMsgCnt++;
 #endif
 
 exit:
@@ -3097,12 +3098,14 @@ otError MleRouter::SendChildIdResponse(Child &aChild)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(aChild.GetExtAddress());
+
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Child ID Response", destination, aChild.GetRloc16());
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx C-ID Resp\n");
-    joiningMsgCnt++;
 #endif
 
 exit:
@@ -3156,6 +3159,9 @@ otError MleRouter::SendChildUpdateRequest(Child &aChild)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(aChild.GetExtAddress());
+
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     if (aChild.IsRxOnWhenIdle())
@@ -3167,7 +3173,6 @@ otError MleRouter::SendChildUpdateRequest(Child &aChild)
     LogMleMessage("Send Child Update Request to child", destination, aChild.GetRloc16());
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx C-Update Req to C\n");
-    controlMsgCnt++;
 #endif
 
 exit:
@@ -3238,6 +3243,8 @@ otError MleRouter::SendChildUpdateResponse(Child *aChild, const Ip6::MessageInfo
         }
     }
 
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, aMessageInfo.GetPeerAddr()));
 
     if (aChild == NULL)
@@ -3250,7 +3257,6 @@ otError MleRouter::SendChildUpdateResponse(Child *aChild, const Ip6::MessageInfo
     }
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx C-Update Resp to C\n");
-    controlMsgCnt++;
 #endif
 
 exit:
@@ -3298,12 +3304,14 @@ otError MleRouter::SendDataResponse(const Ip6::Address &aDestination, const uint
         }
     }
 
+    /* overhead statictics */
+    mleRouterMsgCnt++;
     if (aDelay)
     {
         SuccessOrExit(error = AddDelayedResponse(*message, aDestination, aDelay));
         LogMleMessage("Delay Data Response", aDestination);
 #if ENABLE_DEBUG
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Delay Data Response\n");
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Delay Data Response\n");
 #endif
     }
     else
@@ -3312,7 +3320,6 @@ otError MleRouter::SendDataResponse(const Ip6::Address &aDestination, const uint
         LogMleMessage("Send Data Response", aDestination);
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx D-Resp\n");
-    controlMsgCnt++;
 #endif
     }
 
@@ -4177,6 +4184,8 @@ otError MleRouter::SendAddressSolicit(ThreadStatusTlv::Status aStatus)
     messageInfo.SetSockAddr(GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
 
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo,
                                                       &MleRouter::HandleAddressSolicitResponse, this));
     mAddressSolicitPending = true;
@@ -4184,7 +4193,6 @@ otError MleRouter::SendAddressSolicit(ThreadStatusTlv::Status aStatus)
     LogMleMessage("Send Address Solicit", messageInfo.GetPeerAddr());
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx Addr sol to %04x\n", HostSwap16(messageInfo.GetPeerAddr().mFields.m16[7]));
-    addressMsgCnt++;
 #endif
 
 exit:
@@ -4225,12 +4233,14 @@ otError MleRouter::SendAddressRelease(void)
     messageInfo.SetSockAddr(GetMeshLocal16());
     SuccessOrExit(error = GetLeaderAddress(messageInfo.GetPeerAddr()));
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     LogMleMessage("Send Address Release", messageInfo.GetPeerAddr());
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx Addr Rel\n");
-    addressMsgCnt++;
 #endif
 
 exit:
@@ -4535,12 +4545,13 @@ void MleRouter::SendAddressSolicitResponse(const Coap::Header &aRequestHeader, u
         SuccessOrExit(error = message->Append(&routerMaskTlv, sizeof(routerMaskTlv)));
     }
 
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     LogMleMessage("Send Address Reply", aMessageInfo.GetPeerAddr());
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Tx Addr Reply\n");
-    addressMsgCnt++;
 #endif
 
 exit:

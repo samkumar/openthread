@@ -121,6 +121,8 @@ otError DataPollManager::SendDataPoll(void)
     message = GetInstance().mMessagePool.New(Message::kTypeMacDataPoll, 0);
     VerifyOrExit(message != NULL, error = OT_ERROR_NO_BUFS);
 
+    /* overhead statictics */
+    pollMsgCnt++;
     error = meshForwarder.SendMessage(*message);
 
     if (error != OT_ERROR_NONE)

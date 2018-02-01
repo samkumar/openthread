@@ -189,6 +189,8 @@ void Leader::HandleServerData(Coap::Header &aHeader, Message &aMessage,
                             networkData.GetTlvs(), networkData.GetLength());
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(GetNetif().GetCoap().SendEmptyAck(aHeader, aMessageInfo));
 
     otLogInfoNetData(GetInstance(), "Sent network data registration acknowledgment");
@@ -397,6 +399,8 @@ void Leader::SendCommissioningGetResponse(const Coap::Header &aRequestHeader, co
         message->SetLength(message->GetLength() - 1);
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent commissioning dataset get response");
@@ -428,6 +432,8 @@ void Leader::SendCommissioningSetResponse(const Coap::Header &aRequestHeader, co
     state.SetState(aState);
     SuccessOrExit(error = message->Append(&state, sizeof(state)));
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent commissioning dataset set response");

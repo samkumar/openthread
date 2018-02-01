@@ -94,6 +94,10 @@ otError Joiner::Start(const char *aPSKd, const char *aProvisioningUrl,
 
     VerifyOrExit(mState == OT_JOINER_STATE_IDLE, error = OT_ERROR_BUSY);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Start\n");
+#endif
+
     GetNetif().SetStateChangedFlags(OT_CHANGED_JOINER_STATE);
 
     // use extended address based on factory-assigned IEEE EUI-64
@@ -195,6 +199,10 @@ void Joiner::HandleDiscoverResult(otActiveScanResult *aResult, void *aContext)
 void Joiner::HandleDiscoverResult(otActiveScanResult *aResult)
 {
     otLogFuncEntry();
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Rx DiscResult\n");
+#endif
 
     if (aResult != NULL)
     {
@@ -319,6 +327,10 @@ void Joiner::HandleSecureCoapClientConnect(bool aConnected, void *aContext)
 
 void Joiner::HandleSecureCoapClientConnect(bool aConnected)
 {
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Rx SecClientCon\n");
+#endif
+
     switch (mState)
     {
     case OT_JOINER_STATE_CONNECT:
@@ -405,11 +417,13 @@ void Joiner::SendJoinerFinalize(void)
                       message->GetLength() - header.GetLength());
 #endif
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoapSecure().SendMessage(*message, Joiner::HandleJoinerFinalizeResponse, this));
 
     otLogInfoMeshCoP(GetInstance(), "Sent joiner finalize");
 #if ENABLE_DEBUG
-    printf("[OT-Joiner]: Tx Joiner Finalize\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Tx J-Final\n");
 #endif
 exit:
 
@@ -437,6 +451,10 @@ void Joiner::HandleJoinerFinalizeResponse(Coap::Header *aHeader, Message *aMessa
 
     otLogFuncEntry();
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Rx J-FinalResp\n");
+#endif
+
     VerifyOrExit(mState == OT_JOINER_STATE_CONNECTED &&
                  aResult == OT_ERROR_NONE &&
                  aHeader->GetType() == OT_COAP_TYPE_ACKNOWLEDGMENT &&
@@ -449,9 +467,6 @@ void Joiner::HandleJoinerFinalizeResponse(Coap::Header *aHeader, Message *aMessa
     mTimer.Start(kTimeout);
 
     otLogInfoMeshCoP(GetInstance(), "received joiner finalize response %d", static_cast<uint8_t>(state.GetState()));
-#if ENABLE_DEBUG
-    printf("[OT-Joiner]: Rx Joiner Finalize Response\n");
-#endif
 #if OPENTHREAD_ENABLE_CERT_LOG
     uint8_t buf[OPENTHREAD_CONFIG_MESSAGE_BUFFER_SIZE];
     VerifyOrExit(aMessage->GetLength() <= sizeof(buf));
@@ -486,15 +501,16 @@ void Joiner::HandleJoinerEntrust(Coap::Header &aHeader, Message &aMessage, const
 
     otLogFuncEntry();
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Rx J-Entrust\n");
+#endif
+
     VerifyOrExit(mState == OT_JOINER_STATE_ENTRUST &&
                  aHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE &&
                  aHeader.GetCode() == OT_COAP_CODE_POST, error = OT_ERROR_DROP);
 
     otLogInfoMeshCoP(GetInstance(), "Received joiner entrust");
     otLogCertMeshCoP(GetInstance(), "[THCI] direction=recv | type=JOIN_ENT.ntf");
-#if ENABLE_DEBUG
-    printf("[OT-Joiner]: Rx Joiner Entrust\n");
-#endif
 
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kNetworkMasterKey, sizeof(masterKey), masterKey));
     VerifyOrExit(masterKey.IsValid(), error = OT_ERROR_PARSE);
@@ -528,7 +544,7 @@ void Joiner::HandleJoinerEntrust(Coap::Header &aHeader, Message &aMessage, const
 
     otLogInfoMeshCoP(GetInstance(), "join success!");
 #if ENABLE_DEBUG
-    printf("[OT-Joiner]: Join Success!\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: J-Success!\n");
 #endif
 
     // Send dummy response.
@@ -565,13 +581,16 @@ void Joiner::SendJoinerEntrustResponse(const Coap::Header &aRequestHeader,
     message->SetSubType(Message::kSubTypeJoinerEntrust);
 
     memset(&responseInfo.mSockAddr, 0, sizeof(responseInfo.mSockAddr));
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, responseInfo));
+
 
     mState = OT_JOINER_STATE_JOINED;
 
     otLogInfoArp(GetInstance(), "Sent Joiner Entrust response");
 #if ENABLE_DEBUG
-    printf("[OT-Joiner]: Tx Joiner Entrust Response\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Joiner]: Tx J-EntrustResp\n");
 #endif
     otLogInfoMeshCoP(GetInstance(), "Sent joiner entrust response length = %d", message->GetLength());
     otLogCertMeshCoP(GetInstance(), "[THCI] direction=send | type=JOIN_ENT.rsp");

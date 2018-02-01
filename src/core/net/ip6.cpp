@@ -351,19 +351,19 @@ otError Ip6::SendDatagram(Message &aMessage, MessageInfo &aMessageInfo, IpProto 
     header.SetNextHeader(aIpProto);
     header.SetHopLimit(aMessageInfo.mHopLimit ? aMessageInfo.mHopLimit : static_cast<uint8_t>(kDefaultHopLimit));
 
-    printf("send IPv6 - ");
+    //printf("send IPv6 - ");
 
     if (aMessageInfo.GetSockAddr().IsUnspecified() ||
         aMessageInfo.GetSockAddr().IsMulticast())
     {
-        printf("case 1\n");
+        //printf("case 1\n");
         VerifyOrExit((source = SelectSourceAddress(aMessageInfo)) != NULL,
                      error = OT_ERROR_INVALID_SOURCE_ADDRESS);
         header.SetSource(source->GetAddress());
     }
     else
     {
-        printf("case 2\n");
+        //printf("case 2\n");
         header.SetSource(aMessageInfo.GetSockAddr());
     }
 
@@ -410,7 +410,7 @@ exit:
     if (error == OT_ERROR_NONE)
     {
         aMessage.SetInterfaceId(aMessageInfo.GetInterfaceId());
-        printf("Enqueue\n");
+        //printf("Enqueue\n");
         EnqueueDatagram(aMessage);
     }
 
@@ -643,6 +643,9 @@ otError Ip6::ProcessReceiveCallback(const Message &aMessage, const MessageInfo &
             break;
         }
     }
+  
+    /* Overhead statistics */
+    totalSerialMsgCnt++;
 
     // make a copy of the datagram to pass to host
     VerifyOrExit((messageCopy = aMessage.Clone()) != NULL, error = OT_ERROR_NO_BUFS);
@@ -825,7 +828,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 #endif
 
         if (forwardInterfaceId == 0)
-        {
+        {         
             // try passing to host
             SuccessOrExit(error = ProcessReceiveCallback(aMessage, messageInfo, nextHeader, aFromNcpHost));
 
@@ -1135,7 +1138,7 @@ int8_t Ip6::GetOnLinkNetif(const Address &aAddress)
     {
         for (const NetifUnicastAddress *cur = netif->mUnicastAddresses; cur; cur = cur->GetNext())
         {
-printf("(%u %u)\n", cur->GetAddress().PrefixMatch(aAddress), cur->mPrefixLength);
+//printf("(%u %u)\n", cur->GetAddress().PrefixMatch(aAddress), cur->mPrefixLength);
             if (cur->GetAddress().PrefixMatch(aAddress) >= cur->mPrefixLength)
             {
                 ExitNow(rval = netif->GetInterfaceId());

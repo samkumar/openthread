@@ -98,6 +98,9 @@ void JoinerRouter::HandleNetifStateChanged(uint32_t aFlags)
         mSocket.Bind(sockaddr);
         netif.GetIp6Filter().AddUnsecurePort(sockaddr.mPort);
         otLogInfoMeshCoP(GetInstance(), "Joiner Router: start");
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Start\n");
+#endif
     }
     else
     {
@@ -172,6 +175,9 @@ void JoinerRouter::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &a
     otLogFuncEntryMsg("from peer: %llX",
                       HostSwap64(*reinterpret_cast<const uint64_t *>(aMessageInfo.GetPeerAddr().mFields.m8 + 8)));
     otLogInfoMeshCoP(GetInstance(), "JoinerRouter::HandleUdpReceive");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Rx UdpRx\n");
+#endif
 
     SuccessOrExit(error = GetBorderAgentRloc(borderAgentRloc));
 
@@ -219,6 +225,12 @@ void JoinerRouter::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &a
     messageInfo.GetPeerAddr().mFields.m16[7] = HostSwap16(borderAgentRloc);
     messageInfo.SetPeerPort(kCoapUdpPort);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Tx RelayRx\n");
+#endif
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "Sent relay rx");
@@ -257,6 +269,9 @@ void JoinerRouter::HandleRelayTransmit(Coap::Header &aHeader, Message &aMessage,
                  aHeader.GetCode() == OT_COAP_CODE_POST, error = OT_ERROR_DROP);
 
     otLogInfoMeshCoP(GetInstance(), "Received relay transmit");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Rx RelayTx\n");
+#endif
 
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kJoinerUdpPort, sizeof(joinerPort), joinerPort));
     VerifyOrExit(joinerPort.IsValid(), error = OT_ERROR_PARSE);
@@ -493,6 +508,11 @@ otError JoinerRouter::SendJoinerEntrust(Message &aMessage, const Ip6::MessageInf
     netif.GetCoap().AbortTransaction(&JoinerRouter::HandleJoinerEntrustResponse, this);
 
     otLogInfoMeshCoP(GetInstance(), "Sending JOIN_ENT.ntf");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Tx J-Entrust\n");
+#endif
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(aMessage, aMessageInfo,
                                                       &JoinerRouter::HandleJoinerEntrustResponse, this));
 
@@ -526,6 +546,9 @@ void JoinerRouter::HandleJoinerEntrustResponse(Coap::Header *aHeader, Message *a
 
     VerifyOrExit(aHeader->GetCode() == OT_COAP_CODE_CHANGED);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-JR]: Rx J-ENT-resp\n");
+#endif
     otLogInfoMeshCoP(GetInstance(), "Receive joiner entrust response");
     otLogCertMeshCoP(GetInstance(), "[THCI] direction=recv | type=JOIN_ENT.rsp");
 

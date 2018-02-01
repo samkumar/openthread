@@ -480,6 +480,9 @@ otError Mle::Discover(uint32_t aScanChannels, uint16_t aPanId, bool aJoiner, boo
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0002);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     mIsDiscoverInProgress = true;
@@ -635,6 +638,9 @@ otError Mle::SetStateChild(uint16_t aRloc16)
     {
         netif.RemoveUnicastAddress(mLeaderAloc);
     }
+
+    /* Overhead statistics */
+    myRloc = aRloc16;    
 
     SetRloc16(aRloc16);
     mRole = OT_DEVICE_ROLE_CHILD;
@@ -1585,6 +1591,9 @@ otError Mle::SendParentRequest(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0002);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     if ((scanMask & ScanMaskTlv::kEndDeviceFlag) == 0)
@@ -1655,6 +1664,9 @@ otError Mle::SendChildIdRequest(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParentCandidate.GetExtAddress());
+
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
     LogMleMessage("Send Child ID Request", destination);;
 #if ENABLE_DEBUG
@@ -1689,6 +1701,8 @@ otError Mle::SendDataRequest(const Ip6::Address &aDestination, const uint8_t *aT
     SuccessOrExit(error = AppendActiveTimestamp(*message));
     SuccessOrExit(error = AppendPendingTimestamp(*message));
 
+    /* overhead statictics */
+    mleMsgCnt++;
     if (aDelay)
     {
         SuccessOrExit(error = AddDelayedResponse(*message, aDestination, aDelay));
@@ -1770,9 +1784,32 @@ otError Mle::SendChildUpdateRequest(void)
     }
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n\n");
 #endif
+    
+    /* Overhead statistics */
+    myRloc = GetRloc16();
+    nextHopRloc = mParent.GetRloc16();
+    uint8_t pLinkQualityIn = mParent.GetLinkInfo().GetLinkQuality();
+    uint8_t pTwoWayLinkQuality = (pLinkQualityIn < mParent.GetLinkQualityOut())
+                          ?  pLinkQualityIn : mParent.GetLinkQualityOut();
+    switch(pTwoWayLinkQuality) {
+        case 1:
+            borderRouterLC = kLinkQuality1LinkCost;
+            break;
+        case 2:
+            borderRouterLC = kLinkQuality2LinkCost;
+            break;
+        case 3:
+            borderRouterLC = kLinkQuality3LinkCost;
+            break;
+        default:
+            borderRouterLC = kLinkQuality0LinkCost;
+    }
 
     if (mChildUpdateAttempts >= kMaxChildKeepAliveAttempts)
     {
+        /* Overhead statistics */
+        routeChangeCnt++;
+
         mChildUpdateAttempts = 0;
         BecomeDetached();
         ExitNow();
@@ -1819,6 +1856,9 @@ otError Mle::SendChildUpdateRequest(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParent.GetExtAddress());
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Child Update Request to parent", destination);
@@ -1890,6 +1930,9 @@ otError Mle::SendChildUpdateResponse(const uint8_t *aTlvs, uint8_t aNumTlvs, con
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParent.GetExtAddress());
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Child Update Response to parent", destination);
@@ -1949,6 +1992,9 @@ otError Mle::SendAnnounce(uint8_t aChannel, bool aOrphanAnnounce)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0001);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Send Announce on channel %d", aChannel);
@@ -2904,6 +2950,10 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
     Tlv tlv;
     uint16_t offset;
 
+    /* Overhead statistics */
+    uint8_t pLinkQualityIn;
+    uint8_t pTwoWayLinkQuality;
+
     // Source Address
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kSourceAddress, sizeof(sourceAddress), sourceAddress));
     VerifyOrExit(sourceAddress.IsValid(), error = OT_ERROR_PARSE);
@@ -2996,6 +3046,28 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
                                                 networkData.GetNetworkData(), networkData.GetLength());
 
     netif.GetActiveDataset().ApplyConfiguration();
+
+    /* overhead staticstics */
+    if (mParent.GetRloc16() != nextHopRloc) {
+        borderRouteChangeCnt++;
+        nextHopRloc = mParent.GetRloc16();
+    }
+    pLinkQualityIn = mParent.GetLinkInfo().GetLinkQuality();
+    pTwoWayLinkQuality = (pLinkQualityIn < mParent.GetLinkQualityOut())
+                          ?  pLinkQualityIn : mParent.GetLinkQualityOut();
+    switch(pTwoWayLinkQuality) {
+        case 1:
+            borderRouterLC = kLinkQuality1LinkCost;
+            break;
+        case 2:
+            borderRouterLC = kLinkQuality2LinkCost;
+            break;
+        case 3:
+            borderRouterLC = kLinkQuality3LinkCost;
+            break;
+        default:
+            borderRouterLC = kLinkQuality0LinkCost;
+    }
 
     SuccessOrExit(error = SetStateChild(shortAddress.GetRloc16())); /* hskim: Now become child */
 

@@ -147,6 +147,8 @@ otError TmfProxy::Send(Message &aMessage, uint16_t aLocator, uint16_t aPort)
     messageInfo.GetPeerAddr().mFields.m16[7] = HostSwap16(aLocator);
     messageInfo.SetPeerPort(aPort);
 
+    /* overhead statictics */
+    tmfMsgCnt++;
     if (aPort == kCoapUdpPort)
     {
         // this is request to server, send with client

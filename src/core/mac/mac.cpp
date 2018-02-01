@@ -1324,11 +1324,12 @@ void Mac::SentFrame(otError aError)
            mCounters.mTxAckRequested);
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Bro: %lu\n", mCounters.mTxNoAckRequested); 
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "-----------------\n");
+#endif
+    /* Overhead statistics */
     packetSuccessCnt = mCounters.mTxAcked;
     packetFailCnt = mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel;
     packetBusyChannelCnt = mCounters.mTxErrBusyChannel;
-    broadcastCnt = mCounters.mTxNoAckRequested;
-#endif    
+    broadcastCnt = mCounters.mTxNoAckRequested;    
 
     switch (mOperation)
     {
