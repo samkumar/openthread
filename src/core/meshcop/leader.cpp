@@ -52,6 +52,8 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#define ENABLE_DEBUG (1)
+
 namespace ot {
 namespace MeshCoP {
 
@@ -82,6 +84,10 @@ void Leader::HandlePetition(Coap::Header &aHeader, Message &aMessage, const Ip6:
     StateTlv::State state = StateTlv::kReject;
 
     otLogInfoMeshCoP(GetInstance(), "received petition");
+
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Rx Petition\n");
+#endif
 
     SuccessOrExit(Tlv::GetTlv(aMessage, Tlv::kCommissionerId, sizeof(commissionerId), commissionerId));
     VerifyOrExit(commissionerId.IsValid());
@@ -149,8 +155,13 @@ otError Leader::SendPetitionResponse(const Coap::Header &aRequestHeader, const I
         SuccessOrExit(error = message->Append(&sessionId, sizeof(sessionId)));
     }
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Tx Petition Response\n");
+#endif
     otLogInfoMeshCoP(GetInstance(), "sent petition response");
 
 exit:
@@ -178,6 +189,10 @@ void Leader::HandleKeepAlive(Coap::Header &aHeader, Message &aMessage, const Ip6
     StateTlv::State responseState;
 
     otLogInfoMeshCoP(GetInstance(), "received keep alive");
+
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Rx Keep alive\n");
+#endif
 
     SuccessOrExit(Tlv::GetTlv(aMessage, Tlv::kState, sizeof(state), state));
     VerifyOrExit(state.IsValid());
@@ -224,9 +239,14 @@ otError Leader::SendKeepAliveResponse(const Coap::Header &aRequestHeader, const 
     state.SetState(aState);
     SuccessOrExit(error = message->Append(&state, sizeof(state)));
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent keep alive response");
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Tx Keep alive\n");
+#endif
 
 exit:
 
@@ -255,9 +275,16 @@ otError Leader::SendDatasetChanged(const Ip6::Address &aAddress)
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerAddr(aAddress);
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset changed");
+
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Tx Dataset Changed\n");
+#endif
 
 exit:
 
@@ -317,6 +344,9 @@ void Leader::ResignCommissioner(void)
     SetEmptyCommissionerData();
 
     otLogInfoMeshCoP(GetInstance(), "commissioner inactive");
+#if ENABLE_DEBUG
+    printf("[OT-Leader]: Commissioner inactive\n");
+#endif
 }
 
 }  // namespace MeshCoP

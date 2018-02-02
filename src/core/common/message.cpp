@@ -41,6 +41,8 @@
 #include "common/logging.hpp"
 #include "net/ip6.hpp"
 
+#define ENABLE_DEBUG (0)
+
 namespace ot {
 
 MessagePool::MessagePool(Instance &aInstance) :
@@ -117,6 +119,9 @@ Buffer *MessagePool::NewBuffer(void)
         mFreeBuffers = mFreeBuffers->GetNextBuffer();
         buffer->SetNextBuffer(NULL);
         mNumFreeBuffers--;
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MSG] B: %u->%u\n", mNumFreeBuffers+1, mNumFreeBuffers);
+#endif
     }
 
 #endif
@@ -124,6 +129,11 @@ Buffer *MessagePool::NewBuffer(void)
     if (buffer == NULL)
     {
         otLogInfoMem(GetInstance(), "No available message buffer");
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
+#endif
+        /* Overhead statistics */
+        queueOverflowCnt++;
     }
 
     return buffer;
@@ -140,6 +150,10 @@ void MessagePool::FreeBuffers(Buffer *aBuffer)
         aBuffer->SetNextBuffer(mFreeBuffers);
         mFreeBuffers = aBuffer;
         mNumFreeBuffers++;
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MSG] B %u->%u\n", mNumFreeBuffers-1, mNumFreeBuffers);
+#endif
+
 #endif // OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
         aBuffer = tmpBuffer;
     }
@@ -164,6 +178,9 @@ exit:
     }
     else
     {
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
+#endif
         return OT_ERROR_NO_BUFS;
     }
 }
@@ -309,6 +326,8 @@ otError Message::SetLength(uint16_t aLength)
     {
         bufs -= (((totalLengthCurrent - kHeadBufferDataSize) - 1) / kBufferDataSize) + 1;
     }
+
+    //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "(%u %u %u) (%u %u %u %u)\n", kHeadBufferDataSize, kBufferDataSize, kBufferSize, aLength, totalLengthRequest, totalLengthCurrent, bufs);
 
     SuccessOrExit(error = GetMessagePool()->ReclaimBuffers(bufs));
 

@@ -53,6 +53,12 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -248,6 +254,9 @@ Message *MeshForwarder::GetDirectTransmission(void)
         switch (curMessage->GetType())
         {
         case Message::kTypeIp6:
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx IPv6 msg ");
+#endif
             error = UpdateIp6Route(*curMessage);
 
             if (curMessage->GetSubType() == Message::kSubTypeMleDiscoverRequest)
@@ -264,6 +273,9 @@ Message *MeshForwarder::GetDirectTransmission(void)
 #if OPENTHREAD_FTD
 
         case Message::kType6lowpan:
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx 6LoWPAN msg\n");
+#endif
             error = UpdateMeshRoute(*curMessage);
             break;
 
@@ -327,6 +339,11 @@ otError MeshForwarder::PrepareDataPoll(void)
         mMacDest.SetShort(parent->GetRloc16());
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Tx Data poll msg\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (FinalDest)\n", mMacDest.GetShort());
+#endif
+
 exit:
     return error;
 }
@@ -346,6 +363,21 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     // 1. Choose correct MAC Source Address.
     GetMacSourceAddress(ip6Header.GetSource(), mMacSource);
 
+#if ENABLE_DEBUG
+    uint16_t addr[8];
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Dest ");
+    for (int i=0; i<8; i++) {
+        addr[i] = ip6Header.GetDestination().mFields.m16[i];
+        if (addr[i] != 0) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "%4x", HostSwap16(addr[i]));
+        }
+        if (i < 7) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, ":");
+        }
+    }
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
+#endif
+
     // 2. Choose correct MAC Destination Address.
     if (netif.GetMle().GetRole() == OT_DEVICE_ROLE_DISABLED ||
         netif.GetMle().GetRole() == OT_DEVICE_ROLE_DETACHED)
@@ -353,6 +385,9 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
         // Allow only for link-local unicasts and multicasts.
         if (ip6Header.GetDestination().IsLinkLocal() || ip6Header.GetDestination().IsLinkLocalMulticast())
         {
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
+#endif
             GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
         }
         else
@@ -365,6 +400,11 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
     if (ip6Header.GetDestination().IsMulticast())
     {
+
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Multicast\n");
+#endif
+
         // With the exception of MLE multicasts, a Thread End Device transmits multicasts,
         // as IEEE 802.15.4 unicasts to its parent.
         if (netif.GetMle().GetRole() == OT_DEVICE_ROLE_CHILD && !aMessage.IsSubTypeMle())
@@ -378,6 +418,11 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     }
     else if (ip6Header.GetDestination().IsLinkLocal())
     {
+
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
+#endif
+
         GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
     }
     else if (netif.GetMle().IsMinimalEndDevice())
@@ -1029,16 +1074,25 @@ void MeshForwarder::HandleSentFrame(Mac::Frame &aFrame, otError aError)
         if (aError == OT_ERROR_NONE)
         {
             mIpCounters.mTxSuccess++;
+
+            /* Overhead statistics */
+            Ipv6TxSuccCnt++; 
         }
         else
         {
             mIpCounters.mTxFailure++;
+
+            /* Overhead statistics */
+            Ipv6TxFailCnt++; 
         }
     }
 
     if (mSendMessage->GetDirectTransmission() == false && mSendMessage->IsChildPending() == false)
     {
         mSendQueue.Dequeue(*mSendMessage);
+/*#if ENABLE_DEBUG
+        printf("[OT-MF] Tx End\n");
+#endif*/
         mSendMessage->Free();
         mSendMessage = NULL;
         mMessageNextOffset = 0;
@@ -1342,6 +1396,9 @@ void MeshForwarder::ClearReassemblyList(void)
         LogIp6Message(kMessageReassemblyDrop, *message, NULL, OT_ERROR_NO_FRAME_RECEIVED);
         mIpCounters.mRxFailure++;
 
+        /* Overhead statistics */
+        Ipv6RxFailCnt++;
+
         message->Free();
     }
 }
@@ -1371,6 +1428,9 @@ void MeshForwarder::HandleReassemblyTimer(void)
 
             LogIp6Message(kMessageReassemblyDrop, *message, NULL, OT_ERROR_REASSEMBLY_TIMEOUT);
             mIpCounters.mRxFailure++;
+
+            /* Overhead statistics */
+            Ipv6RxFailCnt++;
 
             message->Free();
         }
@@ -1447,6 +1507,9 @@ otError MeshForwarder::HandleDatagram(Message &aMessage, const otThreadLinkInfo 
 
     LogIp6Message(kMessageReceive, aMessage, &aMacSource, OT_ERROR_NONE);
     mIpCounters.mRxSuccess++;
+    
+    /* Overhead statistics */
+    Ipv6RxSuccCnt++;
 
     return netif.GetIp6().HandleDatagram(aMessage, &netif, netif.GetInterfaceId(), &aLinkInfo, false);
 }

@@ -40,6 +40,12 @@
 #include "common/logging.hpp"
 #include "common/owner-locator.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 namespace ot {
 
 otError MeshForwarder::SendMessage(Message &aMessage)
@@ -585,6 +591,10 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otTh
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d, rss:%d", child->GetRloc16(), indirectMsgCount,
                  aLinkInfo.mRss);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Rx Data Poll, src:0x%04x, qed_msgs:%d, rss:%d\n", child->GetRloc16(), indirectMsgCount, aLinkInfo.mRss);
+#endif
+
 exit:
     return;
 }
@@ -798,20 +808,40 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
 #endif
         else
         {
+
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "ERROR\n");
+#endif
+
             // TODO: support ALOC for Commissioner, Neighbor Discovery Agent
             ExitNow(error = OT_ERROR_DROP);
         }
     }
     else if ((neighbor = netif.GetMle().GetNeighbor(ip6Header.GetDestination())) != NULL)
     {
+
+#if ENABLE_DEBUG                    
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a neighbor node\n");
+#endif
+
         mMeshDest = neighbor->GetRloc16();
     }
     else if (netif.GetNetworkDataLeader().IsOnMesh(ip6Header.GetDestination()))
     {
+
+#if ENABLE_DEBUG                    
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a mesh node\n");
+#endif
+
         SuccessOrExit(error = netif.GetAddressResolver().Resolve(ip6Header.GetDestination(), mMeshDest));
     }
     else
     {
+
+#if ENABLE_DEBUG                    
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to an external node\n");
+#endif
+
         netif.GetNetworkDataLeader().RouteLookup(
             ip6Header.GetSource(),
             ip6Header.GetDestination(),
@@ -832,7 +862,20 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
         // destination is not neighbor
         mMacSource.SetShort(mMeshSource);
         mAddMeshHeader = true;
+
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Intermediate)\n", 
+                  mMacDest.GetShort());
+#endif
+
     }
+
+#if ENABLE_DEBUG
+    else {
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "     -- %4x (FinalDest)\n",
+                  mMacDest.GetShort());
+    }
+#endif
 
 exit:
     return error;

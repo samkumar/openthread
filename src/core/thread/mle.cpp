@@ -57,6 +57,12 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -66,7 +72,10 @@ Mle::Mle(Instance &aInstance) :
     InstanceLocator(aInstance),
     mRetrieveNewNetworkData(false),
     mRole(OT_DEVICE_ROLE_DISABLED),
-    mDeviceMode(ModeTlv::kModeRxOnWhenIdle | ModeTlv::kModeSecureDataRequest),
+
+    /* hskim: We want leaf node to sleep */
+    mDeviceMode(ModeTlv::kModeSecureDataRequest), 
+
     mParentRequestState(kParentIdle),
     mReattachState(kReattachStop),
     mParentRequestTimer(aInstance, &Mle::HandleParentRequestTimer, this),
@@ -210,6 +219,9 @@ Mle::Mle(Instance &aInstance) :
 
 otError Mle::Enable(void)
 {
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Enabled\n");
+#endif
     otError error = OT_ERROR_NONE;
     Ip6::SockAddr sockaddr;
 
@@ -237,6 +249,10 @@ otError Mle::Start(bool aEnableReattach, bool aAnnounceAttach)
 {
     ThreadNetif &netif = GetNetif();
     otError error = OT_ERROR_NONE;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Start\n");
+#endif
 
     // cannot bring up the interface if IEEE 802.15.4 promiscuous mode is enabled
     VerifyOrExit(otPlatRadioGetPromiscuous(&netif.GetInstance()) == false, error = OT_ERROR_INVALID_STATE);
@@ -279,6 +295,10 @@ otError Mle::Stop(bool aClearNetworkDatasets)
 {
     ThreadNetif &netif = GetNetif();
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Stop\n");
+#endif
+
     netif.GetKeyManager().Stop();
     SetStateDetached();
     netif.RemoveUnicastAddress(mMeshLocal16);
@@ -305,6 +325,10 @@ otError Mle::Restore(void)
     Settings::NetworkInfo networkInfo;
     Settings::ParentInfo parentInfo;
     uint16_t length;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Restore\n");
+#endif
 
     netif.GetActiveDataset().Restore();
     netif.GetPendingDataset().Restore();
@@ -430,6 +454,9 @@ otError Mle::Store(void)
     netif.GetKeyManager().SetStoredMacFrameCounter(networkInfo.mMacFrameCounter);
 
     otLogDebgMle(GetInstance(), "Store Network Information");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Store Net Info\n");
+#endif
 
 exit:
     return error;
@@ -476,11 +503,17 @@ otError Mle::Discover(uint32_t aScanChannels, uint16_t aPanId, bool aJoiner, boo
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0002);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     mIsDiscoverInProgress = true;
 
     LogMleMessage("Send Discovery Request", destination);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx DiscoveryReq\n");
+#endif
 
 exit:
 
@@ -602,6 +635,9 @@ otError Mle::SetStateDetached(void)
     netif.GetIp6().GetMpl().SetTimerExpirations(0);
 
     otLogInfoMle(GetInstance(), "Role -> Detached");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n[OT-MLE]: Role -> Detached\n\n");
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -618,6 +654,9 @@ otError Mle::SetStateChild(uint16_t aRloc16)
     {
         netif.RemoveUnicastAddress(mLeaderAloc);
     }
+
+    /* Overhead statistics */
+    myRloc = aRloc16;    
 
     SetRloc16(aRloc16);
     mRole = OT_DEVICE_ROLE_CHILD;
@@ -662,6 +701,9 @@ otError Mle::SetStateChild(uint16_t aRloc16)
 #endif
 
     otLogInfoMle(GetInstance(), "Role -> Child");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n[OT-MLE]: Role -> Child\n\n");
+#endif
     return OT_ERROR_NONE;
 }
 
@@ -1459,7 +1501,14 @@ void Mle::HandleParentRequestTimer(void)
         break;
 
     case kParentRequestStart:
-        mParentRequestState = kParentRequestRouter;
+
+        /* hskim: Only FFD can be a router */
+        if (mDeviceMode & ModeTlv::kModeFFD) {
+            mParentRequestState = kParentRequestRouter;
+        } else {
+            mParentRequestState = kParentRequestChild;
+        }
+
         mParentCandidate.SetState(Neighbor::kStateInvalid);
         mReceivedResponseFromParent = false;
         SendParentRequest();
@@ -1575,6 +1624,10 @@ void Mle::HandleDelayedResponseTimer(void)
     Message *message = mDelayedResponses.GetHead();
     Message *nextMessage = NULL;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE] Delayed timer fired\n");
+#endif
+
     while (message != NULL)
     {
         nextMessage = message->GetNext();
@@ -1599,6 +1652,9 @@ void Mle::HandleDelayedResponseTimer(void)
             if (SendMessage(*message, delayedResponse.GetDestination()) == OT_ERROR_NONE)
             {
                 LogMleMessage("Send delayed message", delayedResponse.GetDestination());
+#if ENABLE_DEBUG
+                otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE] Tx delayed msg\n");
+#endif
             }
             else
             {
@@ -1672,6 +1728,10 @@ otError Mle::SendParentRequest(void)
         break;
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Try to Tx PR 1\n");
+#endif
+
     VerifyOrExit((message = NewMleMessage()) != NULL, error = OT_ERROR_NO_BUFS);
     SuccessOrExit(error = AppendHeader(*message, Header::kCommandParentRequest));
     SuccessOrExit(error = AppendMode(*message, mDeviceMode));
@@ -1679,28 +1739,47 @@ otError Mle::SendParentRequest(void)
     SuccessOrExit(error = AppendScanMask(*message, scanMask));
     SuccessOrExit(error = AppendVersion(*message));
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "2\n");
+#endif
+
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0002);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     if ((scanMask & ScanMaskTlv::kEndDeviceFlag) == 0)
     {
         LogMleMessage("Send Parent Request to routers", destination);
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx P-Req to routers\n");
+#endif
     }
     else
     {
         LogMleMessage("Send Parent Request to routers and REEDs", destination);
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx P-Req to R/REED\n");
+#endif
     }
 
 exit:
 
     if ((scanMask & ScanMaskTlv::kEndDeviceFlag) == 0)
     {
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Wait P-Resp as R\n");
+#endif
         mParentRequestTimer.Start(kParentRequestRouterTimeout);
     }
     else
     {
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Wait P-Resp as ED\n");
+#endif
         mParentRequestTimer.Start(kParentRequestChildTimeout);
     }
 
@@ -1764,8 +1843,14 @@ otError Mle::SendChildIdRequest(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParentCandidate.GetExtAddress());
+
+    /* overhead statictics */
+    addrMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
     LogMleMessage("Send Child ID Request", destination);;
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx C-ID Req\n");
+#endif
 
     if ((mDeviceMode & ModeTlv::kModeRxOnWhenIdle) == 0)
     {
@@ -1795,15 +1880,26 @@ otError Mle::SendDataRequest(const Ip6::Address &aDestination, const uint8_t *aT
     SuccessOrExit(error = AppendActiveTimestamp(*message));
     SuccessOrExit(error = AppendPendingTimestamp(*message));
 
+    /* overhead statictics */
+    mleMsgCnt++;
     if (aDelay)
     {
         SuccessOrExit(error = AddDelayedResponse(*message, aDestination, aDelay));
         LogMleMessage("Delay Data Request", aDestination);
+
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Delay D-Req\n");
+#endif
+
     }
     else
     {
         SuccessOrExit(error = SendMessage(*message, aDestination));
         LogMleMessage("Send Data Request", aDestination);
+
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx D-Req\n");
+#endif
 
         if ((mDeviceMode & ModeTlv::kModeRxOnWhenIdle) == 0)
         {
@@ -1857,8 +1953,56 @@ otError Mle::SendChildUpdateRequest(void)
     Ip6::Address destination;
     Message *message = NULL;
 
+#if ENABLE_DEBUG
+    uint16_t addr;
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\nMy ML-RLOC16: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal16().mFields.m16[i]);
+        if (addr != 0) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "%4x", addr);
+        }
+        if (i < 7) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, ":");
+        }
+    }
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\nMy ML-EID: ");
+    for (int i=0; i<8; i++) {
+        addr = HostSwap16(GetMeshLocal64().mFields.m16[i]);
+        if (addr != 0) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "%4x", addr);
+        }
+        if (i < 7) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, ":");
+        }
+    }
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n\n");
+#endif
+    
+    /* Overhead statistics */
+    myRloc = GetRloc16();
+    nextHopRloc = mParent.GetRloc16();
+    uint8_t pLinkQualityIn = mParent.GetLinkInfo().GetLinkQuality();
+    uint8_t pTwoWayLinkQuality = (pLinkQualityIn < mParent.GetLinkQualityOut())
+                          ?  pLinkQualityIn : mParent.GetLinkQualityOut();
+    switch(pTwoWayLinkQuality) {
+        case 1:
+            borderRouterLC = kLinkQuality1LinkCost;
+            break;
+        case 2:
+            borderRouterLC = kLinkQuality2LinkCost;
+            break;
+        case 3:
+            borderRouterLC = kLinkQuality3LinkCost;
+            break;
+        default:
+            borderRouterLC = kLinkQuality0LinkCost;
+    }
+
     if (mChildUpdateAttempts >= kMaxChildKeepAliveAttempts)
     {
+        /* Overhead statistics */
+        routeChangeCnt++;
+
         mChildUpdateAttempts = 0;
         BecomeDetached();
         ExitNow();
@@ -1912,9 +2056,15 @@ otError Mle::SendChildUpdateRequest(void)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParent.GetExtAddress());
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Child Update Request to parent", destination);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx C-UpdateReq to P\n");
+#endif
 
     if ((mDeviceMode & ModeTlv::kModeRxOnWhenIdle) == 0)
     {
@@ -1980,9 +2130,15 @@ otError Mle::SendChildUpdateResponse(const uint8_t *aTlvs, uint8_t aNumTlvs, con
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xfe80);
     destination.SetIid(mParent.GetExtAddress());
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     LogMleMessage("Send Child Update Response to parent", destination);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx C-Update Resp to P\n");
+#endif
 
 exit:
 
@@ -2036,9 +2192,15 @@ otError Mle::SendAnnounce(uint8_t aChannel, bool aOrphanAnnounce)
     memset(&destination, 0, sizeof(destination));
     destination.mFields.m16[0] = HostSwap16(0xff02);
     destination.mFields.m16[7] = HostSwap16(0x0001);
+
+    /* overhead statictics */
+    mleMsgCnt++;
     SuccessOrExit(error = SendMessage(*message, destination));
 
     otLogInfoMle(GetInstance(), "Send Announce on channel %d", aChannel);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx Annouce\n");
+#endif
 
 exit:
 
@@ -2059,6 +2221,9 @@ void Mle::SendOrphanAnnounce(void)
                                                                     MeshCoP::Tlv::kChannelMask));
 
     VerifyOrExit(channelMask != NULL);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Tx OrphanAnnounce\n");
+#endif
 
     // find next channel in the Active Operational Dataset Channel Mask
     channel = mAnnounceChannel;
@@ -2334,6 +2499,9 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
         {
             if (frameCounter < neighbor->GetMleFrameCounter())
             {
+#if ENABLE_DEBUG
+                otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Frame Reject 1\n");
+#endif
                 otLogDebgMle(GetInstance(), "mle frame reject 1");
                 ExitNow();
             }
@@ -2342,6 +2510,9 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
         {
             if (keySequence <= neighbor->GetKeySequence())
             {
+#if ENABLE_DEBUG
+                otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Frame Reject 1\n");
+#endif
                 otLogDebgMle(GetInstance(), "mle frame reject 2");
                 ExitNow();
             }
@@ -2365,6 +2536,9 @@ void Mle::HandleUdpReceive(Message &aMessage, const Ip6::MessageInfo &aMessageIn
               command == Header::kCommandChildUpdateResponse ||
               command == Header::kCommandAnnounce))
         {
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Seq unknown\n");
+#endif
             otLogDebgMle(GetInstance(), "mle sequence unknown! %d", command);
             ExitNow();
         }
@@ -2469,6 +2643,9 @@ otError Mle::HandleAdvertisement(const Message &aMessage, const Ip6::MessageInfo
     VerifyOrExit(leaderData.IsValid(), error = OT_ERROR_PARSE);
 
     aMessageInfo.GetPeerAddr().ToExtAddress(macAddr);
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx Ad from %04x\n", sourceAddress.GetRloc16());
+#endif
 
     if (mRole != OT_DEVICE_ROLE_DETACHED)
     {
@@ -2552,6 +2729,9 @@ otError Mle::HandleDataResponse(const Message &aMessage, const Ip6::MessageInfo 
     otError error;
 
     LogMleMessage("Receive Data Response", aMessageInfo.GetPeerAddr());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx D-Resp\n");
+#endif
 
     error = HandleLeaderData(aMessage, aMessageInfo);
 
@@ -2575,6 +2755,8 @@ otError Mle::HandleLeaderData(const Message &aMessage, const Ip6::MessageInfo &a
     uint16_t pendingDatasetOffset = 0;
     bool dataRequest = false;
     Tlv tlv;
+
+printf("[OT-MLE] Rx LeaderData\n");
 
     // Leader Data
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kLeaderData, sizeof(leaderData), leaderData));
@@ -2790,6 +2972,9 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
     VerifyOrExit(sourceAddress.IsValid(), error = OT_ERROR_PARSE);
 
     LogMleMessage("Receive Parent Response", aMessageInfo.GetPeerAddr(), sourceAddress.GetRloc16());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx P-Resp ");
+#endif
 
     // Response
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kResponse, sizeof(response), response));
@@ -2805,9 +2990,17 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
         mReceivedResponseFromParent = true;
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "1 ");
+#endif
+
     // Leader Data
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kLeaderData, sizeof(leaderData), leaderData));
     VerifyOrExit(leaderData.IsValid(), error = OT_ERROR_PARSE);
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "2 ");
+#endif
 
     // Link Quality
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kLinkMargin, sizeof(linkMarginTlv), linkMarginTlv));
@@ -2823,6 +3016,10 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
     linkQuality = LinkQualityInfo::ConvertLinkMarginToLinkQuality(linkMargin);
 
     VerifyOrExit(mParentRequestState != kParentRequestRouter || linkQuality == 3);
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "3 ");
+#endif
 
     // Connectivity
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kConnectivity, sizeof(connectivity), connectivity));
@@ -2853,6 +3050,10 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
         }
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "4 ");
+#endif
+
     // if already have a candidate parent, only seek a better parent
     if (mParentCandidate.GetState() == Neighbor::kStateParentResponse)
     {
@@ -2871,9 +3072,17 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
         VerifyOrExit(compare != 0 || IsBetterParent(sourceAddress.GetRloc16(), linkQuality, linkMargin, connectivity));
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "5 ");
+#endif
+
     // Link Frame Counter
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kLinkFrameCounter, sizeof(linkFrameCounter), linkFrameCounter));
     VerifyOrExit(linkFrameCounter.IsValid(), error = OT_ERROR_PARSE);
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "6 ");
+#endif
 
     // Mle Frame Counter
     if (Tlv::GetTlv(aMessage, Tlv::kMleFrameCounter, sizeof(mleFrameCounter), mleFrameCounter) == OT_ERROR_NONE)
@@ -2884,6 +3093,10 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
     {
         mleFrameCounter.SetFrameCounter(linkFrameCounter.GetFrameCounter());
     }
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "7 ");
+#endif
 
     // Challenge
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kChallenge, sizeof(challenge), challenge));
@@ -2913,12 +3126,19 @@ otError Mle::HandleParentResponse(const Message &aMessage, const Ip6::MessageInf
     mParentIsSingleton = connectivity.GetActiveRouters() <= 1;
     mParentLinkMargin = linkMargin;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "8");
+#endif
+
 exit:
 
     if (error != OT_ERROR_NONE)
     {
         otLogWarnMleErr(GetInstance(), error, "Failed to process Parent Response");
     }
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
+#endif
 
     return error;
 }
@@ -2937,11 +3157,18 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
     Tlv tlv;
     uint16_t offset;
 
+    /* Overhead statistics */
+    uint8_t pLinkQualityIn;
+    uint8_t pTwoWayLinkQuality;
+
     // Source Address
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kSourceAddress, sizeof(sourceAddress), sourceAddress));
     VerifyOrExit(sourceAddress.IsValid(), error = OT_ERROR_PARSE);
 
     LogMleMessage("Receive Child ID Response", aMessageInfo.GetPeerAddr(), sourceAddress.GetRloc16());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx C-ID Resp\n");
+#endif
 
     VerifyOrExit(mParentRequestState == kChildIdRequest);
 
@@ -3026,6 +3253,29 @@ otError Mle::HandleChildIdResponse(const Message &aMessage, const Ip6::MessageIn
 
     netif.GetActiveDataset().ApplyConfiguration();
 
+    /* overhead staticstics */
+    if (mParent.GetRloc16() != nextHopRloc) {
+        borderRouteChangeCnt++;
+        nextHopRloc = mParent.GetRloc16();
+    }
+    pLinkQualityIn = mParent.GetLinkInfo().GetLinkQuality();
+    pTwoWayLinkQuality = (pLinkQualityIn < mParent.GetLinkQualityOut())
+                          ?  pLinkQualityIn : mParent.GetLinkQualityOut();
+    switch(pTwoWayLinkQuality) {
+        case 1:
+            borderRouterLC = kLinkQuality1LinkCost;
+            break;
+        case 2:
+            borderRouterLC = kLinkQuality2LinkCost;
+            break;
+        case 3:
+            borderRouterLC = kLinkQuality3LinkCost;
+            break;
+        default:
+            borderRouterLC = kLinkQuality0LinkCost;
+    }
+
+    /* hskim: Now become child */
     SuccessOrExit(error = SetStateChild(shortAddress.GetRloc16()));
 
 exit:
@@ -3059,6 +3309,10 @@ otError Mle::HandleChildUpdateRequest(const Message &aMessage, const Ip6::Messag
     VerifyOrExit(sourceAddress.IsValid(), error = OT_ERROR_PARSE);
 
     LogMleMessage("Receive Child Update Request from parent", aMessageInfo.GetPeerAddr(), sourceAddress.GetRloc16());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx C-UpdateReq from P\n");
+#endif
+
 
     VerifyOrExit(mParent.GetRloc16() == sourceAddress.GetRloc16(), error = OT_ERROR_DROP);
 
@@ -3117,6 +3371,9 @@ otError Mle::HandleChildUpdateResponse(const Message &aMessage, const Ip6::Messa
     TimeoutTlv timeout;
 
     LogMleMessage("Receive Child Update Response from parent", aMessageInfo.GetPeerAddr());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx C-Update Resp from P\n");
+#endif
 
     // Status
     if (Tlv::GetTlv(aMessage, Tlv::kStatus, sizeof(status), status) == OT_ERROR_NONE)
@@ -3226,6 +3483,9 @@ otError Mle::HandleAnnounce(const Message &aMessage, const Ip6::MessageInfo &aMe
     PanIdTlv panid;
 
     LogMleMessage("Receive Announce", aMessageInfo.GetPeerAddr());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx Announce\n");
+#endif
 
     SuccessOrExit(error = Tlv::GetTlv(aMessage, Tlv::kChannel, sizeof(channel), channel));
     VerifyOrExit(channel.IsValid(), error = OT_ERROR_PARSE);
@@ -3280,6 +3540,9 @@ otError Mle::HandleDiscoveryResponse(const Message &aMessage, const Ip6::Message
     uint16_t end;
 
     LogMleMessage("Receive Discovery Response", aMessageInfo.GetPeerAddr());
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLE]: Rx Disc Resp\n");
+#endif
 
     VerifyOrExit(mIsDiscoverInProgress, error = OT_ERROR_DROP);
 

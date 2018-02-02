@@ -53,6 +53,12 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -215,6 +221,9 @@ void AddressResolver::InvalidateCacheEntry(Cache &aEntry, InvalidationReason aRe
 
     aEntry.mAge = kCacheEntries - 1;
     aEntry.mState = Cache::kStateInvalid;
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Cache entry removed!\n");
+#endif
 
     OT_UNUSED_VARIABLE(stringBuffer);
     OT_UNUSED_VARIABLE(aReason);
@@ -288,6 +297,9 @@ otError AddressResolver::Resolve(const Ip6::Address &aEid, uint16_t &aRloc16)
     {
     case Cache::kStateInvalid:
         SuccessOrExit(error = SendAddressQuery(aEid));
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Invalid\n");
+#endif
         entry->mTarget = aEid;
         entry->mRloc16 = Mac::kShortAddrInvalid;
         entry->mTimeout = kAddressQueryTimeout;
@@ -351,9 +363,14 @@ otError AddressResolver::SendAddressQuery(const Ip6::Address &aEid)
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address query for %s", aEid.ToString(stringBuffer, sizeof(stringBuffer)));
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Query\n");
+#endif
 
     OT_UNUSED_VARIABLE(stringBuffer);
 
@@ -393,6 +410,11 @@ void AddressResolver::HandleAddressNotification(Coap::Header &aHeader, Message &
 
     VerifyOrExit(aHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE &&
                  aHeader.GetCode() == OT_COAP_CODE_POST);
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Rx Addr Notification from %04x\n", 
+           HostSwap16(aMessageInfo.GetPeerAddr().mFields.m16[7]));
+#endif
 
     SuccessOrExit(ThreadTlv::GetTlv(aMessage, ThreadTlv::kTarget, sizeof(targetTlv), targetTlv));
     VerifyOrExit(targetTlv.IsValid());
@@ -461,6 +483,9 @@ void AddressResolver::HandleAddressNotification(Coap::Header &aHeader, Message &
             if (netif.GetCoap().SendEmptyAck(aHeader, aMessageInfo) == OT_ERROR_NONE)
             {
                 otLogInfoArp(GetInstance(), "Sending address notification acknowledgment");
+#if ENABLE_DEBUG
+                otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Notification ACK\n");
+#endif
             }
 
             netif.GetMeshForwarder().HandleResolved(targetTlv.GetTarget(), OT_ERROR_NONE);
@@ -483,6 +508,10 @@ otError AddressResolver::SendAddressError(const ThreadTargetTlv &aTarget, const 
     Coap::Header header;
     Ip6::MessageInfo messageInfo;
     char stringBuffer[Ip6::Address::kIp6AddressStringSize];
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Error\n");
+#endif
 
     header.Init(aDestination == NULL ? OT_COAP_TYPE_NON_CONFIRMABLE : OT_COAP_TYPE_CONFIRMABLE,
                 OT_COAP_CODE_POST);
@@ -508,6 +537,8 @@ otError AddressResolver::SendAddressError(const ThreadTargetTlv &aTarget, const 
     messageInfo.SetPeerPort(kCoapUdpPort);
     messageInfo.SetInterfaceId(netif.GetInterfaceId());
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address error for target %s",
@@ -544,6 +575,10 @@ void AddressResolver::HandleAddressError(Coap::Header &aHeader, Message &aMessag
     Mac::ExtAddress macAddr;
     Ip6::Address destination;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Rx Addr Error Notification\n");
+#endif
+
     VerifyOrExit(aHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE &&
                  aHeader.GetCode() == OT_COAP_CODE_POST, error = OT_ERROR_DROP);
 
@@ -554,6 +589,9 @@ void AddressResolver::HandleAddressError(Coap::Header &aHeader, Message &aMessag
         if (netif.GetCoap().SendEmptyAck(aHeader, aMessageInfo) == OT_ERROR_NONE)
         {
             otLogInfoArp(GetInstance(), "Sent address error notification acknowledgment");
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Error Notification ACK\n");
+#endif
         }
     }
 
@@ -638,6 +676,11 @@ void AddressResolver::HandleAddressQuery(Coap::Header &aHeader, Message &aMessag
     VerifyOrExit(aHeader.GetType() == OT_COAP_TYPE_NON_CONFIRMABLE &&
                  aHeader.GetCode() == OT_COAP_CODE_POST);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Rx Addr Query from 0x%04x, ",
+           HostSwap16(aMessageInfo.GetPeerAddr().mFields.m16[7]));
+#endif
+
     SuccessOrExit(ThreadTlv::GetTlv(aMessage, ThreadTlv::kTarget, sizeof(targetTlv), targetTlv));
     VerifyOrExit(targetTlv.IsValid());
 
@@ -652,6 +695,9 @@ void AddressResolver::HandleAddressQuery(Coap::Header &aHeader, Message &aMessag
     if (netif.IsUnicastAddress(targetTlv.GetTarget()))
     {
         mlIidTlv.SetIid(netif.GetMle().GetMeshLocal64().GetIid());
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "it's me\n");
+#endif
         SendAddressQueryResponse(targetTlv, mlIidTlv, NULL, aMessageInfo.GetPeerAddr());
         ExitNow();
     }
@@ -673,10 +719,16 @@ void AddressResolver::HandleAddressQuery(Coap::Header &aHeader, Message &aMessag
         {
             mlIidTlv.SetIid(child.GetExtAddress());
             lastTransactionTimeTlv.SetTime(TimerMilli::GetNow() - child.GetLastHeard());
+
+#if ENABLE_DEBUG
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "my child\n");
+#endif
+
             SendAddressQueryResponse(targetTlv, mlIidTlv, &lastTransactionTimeTlv, aMessageInfo.GetPeerAddr());
             ExitNow();
         }
     }
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "no idea\n");
 
     OT_UNUSED_VARIABLE(stringBuffer);
 
@@ -703,6 +755,10 @@ void AddressResolver::SendAddressQueryResponse(const ThreadTargetTlv &aTargetTlv
 
     VerifyOrExit((message = netif.GetCoap().NewMessage(header)) != NULL, error = OT_ERROR_NO_BUFS);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Tx Addr Notification\n");
+#endif
+
     SuccessOrExit(error = message->Append(&aTargetTlv, sizeof(aTargetTlv)));
     SuccessOrExit(error = message->Append(&aMlIidTlv, sizeof(aMlIidTlv)));
 
@@ -719,6 +775,8 @@ void AddressResolver::SendAddressQueryResponse(const ThreadTargetTlv &aTargetTlv
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
 
+    /* overhead statistics */
+    addrMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoArp(GetInstance(), "Sending address notification for target %s",
@@ -806,6 +864,9 @@ void AddressResolver::HandleIcmpReceive(Message &aMessage, const Ip6::MessageInf
 {
     Ip6::Header ip6Header;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_ARP, "[OT-AddrResolver]: Rx ICMP\n");
+#endif
     VerifyOrExit(aIcmpHeader.GetType() == Ip6::IcmpHeader::kTypeDstUnreach);
     VerifyOrExit(aIcmpHeader.GetCode() == Ip6::IcmpHeader::kCodeDstUnreachNoRoute);
     VerifyOrExit(aMessage.Read(aMessage.GetOffset(), sizeof(ip6Header), &ip6Header) == sizeof(ip6Header));

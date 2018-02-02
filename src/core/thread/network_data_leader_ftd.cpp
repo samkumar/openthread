@@ -57,6 +57,12 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (1)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -163,6 +169,9 @@ void Leader::HandleServerData(Coap::Header &aHeader, Message &aMessage,
     ThreadNetworkDataTlv networkData;
     ThreadRloc16Tlv rloc16;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Rx ND registration\n");
+#endif
     otLogInfoNetData(GetInstance(), "Received network data registration");
 
     if (ThreadTlv::GetTlv(aMessage, ThreadTlv::kRloc16, sizeof(rloc16), rloc16) == OT_ERROR_NONE)
@@ -179,6 +188,8 @@ void Leader::HandleServerData(Coap::Header &aHeader, Message &aMessage,
                             networkData.GetTlvs(), networkData.GetLength());
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(GetNetif().GetCoap().SendEmptyAck(aHeader, aMessageInfo));
 
     otLogInfoNetData(GetInstance(), "Sent network data registration acknowledgment");
@@ -387,6 +398,8 @@ void Leader::SendCommissioningGetResponse(const Coap::Header &aRequestHeader, co
         message->SetLength(message->GetLength() - 1);
     }
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent commissioning dataset get response");
@@ -418,6 +431,8 @@ void Leader::SendCommissioningSetResponse(const Coap::Header &aRequestHeader, co
     state.SetState(aState);
     SuccessOrExit(error = message->Append(&state, sizeof(state)));
 
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent commissioning dataset set response");
@@ -732,6 +747,9 @@ otError Leader::RegisterNetworkData(uint16_t aRloc16, uint8_t *aTlvs, uint8_t aT
     uint8_t oldTlvs[NetworkData::kMaxSize];
     uint8_t oldTlvsLength = NetworkData::kMaxSize;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Register ND\n");
+#endif
     RlocLookup(aRloc16, rlocIn, rlocStable, mTlvs, mLength);
 
     if (rlocIn)
@@ -782,6 +800,10 @@ otError Leader::AddNetworkData(uint8_t *aTlvs, uint8_t aTlvsLength, uint8_t *aOl
     NetworkDataTlv *cur = reinterpret_cast<NetworkDataTlv *>(aTlvs);
     NetworkDataTlv *end = reinterpret_cast<NetworkDataTlv *>(aTlvs + aTlvsLength);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Add ND\n");
+#endif
+
     while (cur < end)
     {
         VerifyOrExit((cur + 1) <= end && cur->GetNext() <= end, error = OT_ERROR_PARSE);
@@ -824,6 +846,10 @@ otError Leader::AddPrefix(PrefixTlv &aPrefix)
     otError error = OT_ERROR_NONE;
     NetworkDataTlv *cur;
     NetworkDataTlv *end;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Add Prefix\n");
+#endif
 
     VerifyOrExit(aPrefix.IsValid(), error = OT_ERROR_PARSE);
     cur = aPrefix.GetSubTlvs();
@@ -892,6 +918,10 @@ otError Leader::AddHasRoute(PrefixTlv &aPrefix, HasRouteTlv &aHasRoute)
     PrefixTlv *dstPrefix = NULL;
     HasRouteTlv *dstHasRoute = NULL;
     uint16_t appendLength = 0;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Add HasRoute\n");
+#endif
 
     VerifyOrExit(aHasRoute.GetNumEntries() > 0, error = OT_ERROR_PARSE);
 
@@ -1070,6 +1100,10 @@ otError Leader::AddBorderRouter(PrefixTlv &aPrefix, BorderRouterTlv &aBorderRout
     BorderRouterTlv *dstBorderRouter = NULL;
     int contextId = -1;
     uint16_t appendLength = 0;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND-Le]: Add BR\n");
+#endif
 
     VerifyOrExit(aBorderRouter.GetNumEntries() > 0, error = OT_ERROR_PARSE);
 

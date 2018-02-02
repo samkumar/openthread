@@ -80,4 +80,36 @@
 
 #endif
 
+extern uint16_t myRloc;               // RLOC16 of current node
+
+/* Link layer performance */
+extern uint32_t packetSuccessCnt;     // packet success counter
+extern uint32_t packetFailCnt;        // packet fail (reTx failure) counter
+extern uint32_t packetBusyChannelCnt; // packet fail (busy channel) counter
+extern uint32_t broadcastCnt;         // broadcast packets counter
+extern uint32_t queueOverflowCnt;     // queue overflow    
+
+/* Ipv6 overhead */
+extern uint32_t totalIpv6MsgCnt;      // Ipv6 packets counter
+extern uint32_t Ipv6TxSuccCnt;      // Ipv6 packets counter
+extern uint32_t Ipv6TxFailCnt;      // Ipv6 packets counter
+extern uint32_t Ipv6RxSuccCnt;      // Ipv6 packets counter
+extern uint32_t Ipv6RxFailCnt;      // Ipv6 packets counter
+
+/* Route info */
+extern uint16_t nextHopRloc;          // RLOC16 of next hop to border router
+extern uint8_t borderRouterLC;        // link cost for border router next hop
+extern uint8_t borderRouterRC;        // path cost for border router next hop
+extern uint32_t borderRouteChangeCnt; // border router next hop change counter
+extern uint32_t routeChangeCnt;       // all next hop change counter
+
+/* Msg overhead */
+extern uint32_t pollMsgCnt;           // poll packets counter
+extern uint32_t mleMsgCnt;            // mle packets counter
+extern uint32_t mleRouterMsgCnt;      // mlerouter packets counter
+extern uint32_t addrMsgCnt;           // addr packets counter
+extern uint32_t netdataMsgCnt;        // netdata packets counter
+extern uint32_t meshcopMsgCnt;        // meshcop packets counter
+extern uint32_t tmfMsgCnt;            // tmf packets counter
+extern uint32_t totalSerialMsgCnt;    // serial packets counter
 #endif  // DEBUG_HPP_

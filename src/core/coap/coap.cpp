@@ -41,6 +41,12 @@
 #include "net/udp6.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 /**
  * @file
  *   This file contains common code base for CoAP client and server.
@@ -225,6 +231,9 @@ otError CoapBase::SendEmptyMessage(Header::Type aType, const Header &aRequestHea
     Header responseHeader;
     Message *message = NULL;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Tx EmptyMsg\n");
+#endif
     VerifyOrExit(aRequestHeader.GetType() == OT_COAP_TYPE_CONFIRMABLE, error = OT_ERROR_INVALID_ARGS);
 
     responseHeader.Init(aType, OT_COAP_CODE_EMPTY);
@@ -251,6 +260,10 @@ otError CoapBase::SendHeaderResponse(Header::Code aCode, const Header &aRequestH
     Header responseHeader;
     Header::Type requestType;
     Message *message = NULL;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Tx HeaderResp\n");
+#endif
 
     VerifyOrExit(aRequestHeader.IsRequest(), error = OT_ERROR_INVALID_ARGS);
 
@@ -297,6 +310,10 @@ void CoapBase::HandleRetransmissionTimer(void)
     Message *message = mPendingRequests.GetHead();
     Message *nextMessage = NULL;
     Ip6::MessageInfo messageInfo;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: ReTx Timer fired\n");
+#endif
 
     while (message != NULL)
     {
@@ -559,6 +576,10 @@ void CoapBase::ProcessReceivedResponse(Header &aResponseHeader, Message &aMessag
 
     message = FindRelatedRequest(aResponseHeader, aMessageInfo, requestHeader, coapMetadata);
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Rx Resp\n");
+#endif
+
     if (message == NULL)
     {
         ExitNow();
@@ -634,6 +655,9 @@ void CoapBase::ProcessReceivedRequest(Header &aHeader, Message &aMessage, const 
     Message *cachedResponse = NULL;
     otError error = OT_ERROR_NOT_FOUND;
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: Rx Req\n");
+#endif
     if (mInterceptor != NULL)
     {
         SuccessOrExit(error = mInterceptor(aMessage, aMessageInfo, mContext));
@@ -860,6 +884,10 @@ void ResponsesQueue::EnqueueResponse(Message &aMessage, const Ip6::MessageInfo &
     if (!mTimer.IsRunning())
     {
         mTimer.Start(TimerMilli::SecToMsec(kExchangeLifetime));
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: mTimer set %lu\n",
+              TimerMilli::SecToMsec(kExchangeLifetime));
+#endif
     }
 
 exit:
@@ -891,6 +919,10 @@ void ResponsesQueue::HandleTimer(void)
 {
     Message               *message;
     EnqueuedResponseHeader enqueuedResponseHeader;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_COAP, "[OT-COAP]: mTimer fired\n");
+#endif
 
     while ((message = mQueue.GetHead()) != NULL)
     {

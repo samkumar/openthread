@@ -47,6 +47,12 @@
 #include "thread/thread_tlvs.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (1)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 namespace ot {
 namespace NetworkData {
 
@@ -1031,6 +1037,9 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statistics */
+    netdataMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     if (mLocal)
@@ -1040,6 +1049,9 @@ otError NetworkData::SendServerDataNotification(uint16_t aRloc16)
     }
 
     otLogInfoNetData(GetInstance(), "Sent server data notification");
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_NET_DATA, "[OT-ND]: Tx SD Notification\n");
+#endif
 
 exit:
 

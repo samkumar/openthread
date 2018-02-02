@@ -79,7 +79,9 @@ enum
                                   kAckRandomFactorNumerator / kAckRandomFactorDenominator,
     kMaxTransmitWait            = kAckTimeout * ((2 << kMaxRetransmit) - 1) *
                                   kAckRandomFactorNumerator / kAckRandomFactorDenominator,
-    kMaxLatency                 = 100,
+    /* hskim: latency is too long */
+    kMaxLatency                 = 5,
+    //kMaxLatency                 = 100,
     kProcessingDelay            = kAckTimeout,
     kMaxRtt                     = 2 * kMaxLatency + kProcessingDelay,
     kExchangeLifetime           = kMaxTransmitSpan + 2 * (kMaxLatency) + kProcessingDelay,

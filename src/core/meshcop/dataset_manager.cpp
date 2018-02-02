@@ -241,6 +241,9 @@ otError DatasetManager::Register(void)
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
     netif.GetMle().GetLeaderAloc(messageInfo.GetPeerAddr());
     messageInfo.SetPeerPort(kCoapUdpPort);
+
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, messageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset to leader");
@@ -356,6 +359,8 @@ void DatasetManager::SendGetResponse(const Coap::Header &aRequestHeader, const I
         message->SetLength(message->GetLength() - 1);
     }
 
+    /* overhead statictics */
+    meshcopMsgCnt++;
     SuccessOrExit(error = netif.GetCoap().SendMessage(*message, aMessageInfo));
 
     otLogInfoMeshCoP(GetInstance(), "sent dataset get response");

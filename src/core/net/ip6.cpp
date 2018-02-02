@@ -48,6 +48,12 @@
 #include "net/udp6.hpp"
 #include "thread/mle.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 namespace ot {
 namespace Ip6 {
 
@@ -362,15 +368,19 @@ otError Ip6::SendDatagram(Message &aMessage, MessageInfo &aMessageInfo, IpProto 
     header.SetNextHeader(aIpProto);
     header.SetHopLimit(aMessageInfo.mHopLimit ? aMessageInfo.mHopLimit : static_cast<uint8_t>(kDefaultHopLimit));
 
+    //printf("send IPv6 - ");
+
     if (aMessageInfo.GetSockAddr().IsUnspecified() ||
         aMessageInfo.GetSockAddr().IsMulticast())
     {
+        //printf("case 1\n");
         VerifyOrExit((source = SelectSourceAddress(aMessageInfo)) != NULL,
                      error = OT_ERROR_INVALID_SOURCE_ADDRESS);
         header.SetSource(source->GetAddress());
     }
     else
     {
+        //printf("case 2\n");
         header.SetSource(aMessageInfo.GetSockAddr());
     }
 
@@ -433,6 +443,7 @@ exit:
     if (error == OT_ERROR_NONE)
     {
         aMessage.SetInterfaceId(aMessageInfo.GetInterfaceId());
+        //printf("Enqueue\n");
         EnqueueDatagram(aMessage);
     }
 
@@ -665,6 +676,9 @@ otError Ip6::ProcessReceiveCallback(const Message &aMessage, const MessageInfo &
             break;
         }
     }
+  
+    /* Overhead statistics */
+    totalSerialMsgCnt++;
 
     // make a copy of the datagram to pass to host
     VerifyOrExit((messageCopy = aMessage.Clone()) != NULL, error = OT_ERROR_NO_BUFS);
@@ -741,6 +755,21 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 
 
     SuccessOrExit(error = header.Init(aMessage));
+
+#if ENABLE_DEBUG
+    uint16_t addr[8];
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] From Src ");
+    for (int i=0; i<8; i++) {
+        addr[i] = header.GetSource().mFields.m16[i];
+        if (addr[i] != 0) {
+           otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "%4x", HostSwap16(addr[i]));
+        }
+        if (i < 7) {
+            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, ":");
+        }
+    }
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
+#endif
 
     messageInfo.SetPeerAddr(header.GetSource());
     messageInfo.SetSockAddr(header.GetDestination());
@@ -825,6 +854,12 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     if (forward)
     {
         forwardInterfaceId = FindForwardInterfaceId(messageInfo);
+
+        /* hskim: force to have a valid Id */
+        forwardInterfaceId = 1;
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] IfID: %u\n", forwardInterfaceId);
+#endif
 
         if (forwardInterfaceId == 0)
         {
@@ -1132,6 +1167,7 @@ int8_t Ip6::GetOnLinkNetif(const Address &aAddress)
     {
         for (const NetifUnicastAddress *cur = netif->mUnicastAddresses; cur; cur = cur->GetNext())
         {
+//printf("(%u %u)\n", cur->GetAddress().PrefixMatch(aAddress), cur->mPrefixLength);
             if (cur->GetAddress().PrefixMatch(aAddress) >= cur->mPrefixLength)
             {
                 ExitNow(rval = netif->GetInterfaceId());

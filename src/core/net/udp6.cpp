@@ -40,6 +40,8 @@
 #include "common/instance.hpp"
 #include "net/ip6.hpp"
 
+#define ENABLE_DEBUG (0)
+
 using ot::Encoding::BigEndian::HostSwap16;
 
 namespace ot {
@@ -130,6 +132,10 @@ otError UdpSocket::SendTo(Message &aMessage, const MessageInfo &aMessageInfo)
     udpHeader.SetDestinationPort(messageInfoLocal.mPeerPort);
     udpHeader.SetLength(sizeof(udpHeader) + aMessage.GetLength());
     udpHeader.SetChecksum(0);
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n\n[OT-UDP]: Tx Port %4x to %4x\n", GetSockName().mPort, messageInfoLocal.mPeerPort);
+#endif
 
     SuccessOrExit(error = aMessage.Prepend(&udpHeader, sizeof(udpHeader)));
     aMessage.SetOffset(0);
@@ -238,6 +244,10 @@ otError Udp::HandleMessage(Message &aMessage, MessageInfo &aMessageInfo)
     aMessage.MoveOffset(sizeof(udpHeader));
     aMessageInfo.mPeerPort = udpHeader.GetSourcePort();
     aMessageInfo.mSockPort = udpHeader.GetDestinationPort();
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-UDP]: Rx Port %4x to %4x\n", aMessageInfo.mPeerPort, aMessageInfo.mSockPort);
+#endif
 
     // find socket
     for (UdpSocket *socket = mSockets; socket; socket = socket->GetNext())

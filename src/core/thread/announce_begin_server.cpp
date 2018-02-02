@@ -47,6 +47,8 @@
 #include "thread/thread_netif.hpp"
 #include "thread/thread_uri_paths.hpp"
 
+#define ENABLE_DEBUG (1)
+
 using ot::Encoding::BigEndian::HostSwap32;
 
 namespace ot {
@@ -120,6 +122,9 @@ void AnnounceBeginServer::HandleRequest(Coap::Header &aHeader, Message &aMessage
     {
         SuccessOrExit(GetNetif().GetCoap().SendEmptyAck(aHeader, responseInfo));
         otLogInfoMeshCoP(GetInstance(), "sent announce begin response");
+#if ENABLE_DEBUG
+        printf("[OT-Announce-Beginner]: Tx Announce begin response\n");
+#endif
     }
 
 exit:

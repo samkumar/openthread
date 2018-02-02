@@ -48,6 +48,12 @@
 #include "thread/mle.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 namespace ot {
 
 DataPollManager::DataPollManager(Instance &aInstance):
@@ -116,6 +122,8 @@ otError DataPollManager::SendDataPoll(void)
     message = GetInstance().GetMessagePool().New(Message::kTypeMacDataPoll, 0);
     VerifyOrExit(message != NULL, error = OT_ERROR_NO_BUFS);
 
+    /* overhead statictics */
+    pollMsgCnt++;
     error = netif.GetMeshForwarder().SendMessage(*message);
 
     if (error != OT_ERROR_NONE)
@@ -130,6 +138,9 @@ exit:
     case OT_ERROR_NONE:
         otLogDebgMac(GetInstance(), "Sending data poll");
 
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-DataPollMGR]: Tx Data Poll\n");
+#endif
         if (mNoBufferRetxMode == true)
         {
             mNoBufferRetxMode = false;
@@ -343,6 +354,10 @@ void DataPollManager::ScheduleNextPoll(PollPeriodSelector aPollPeriodSelector)
     {
         mPollPeriod = CalculatePollPeriod();
     }
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-DataPollMGR]: Poll period %lu\n", mPollPeriod);
+#endif
 
     if (mTimer.IsRunning())
     {

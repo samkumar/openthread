@@ -52,6 +52,12 @@
 #include "thread/mle_router.hpp"
 #include "thread/thread_netif.hpp"
 
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+#define ENABLE_DEBUG (0)
+#else
+#define ENABLE_DEBUG (1)
+#endif
+
 using ot::Encoding::BigEndian::HostSwap64;
 
 namespace ot {
@@ -1234,6 +1240,21 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
         mCounters.mTxNoAckRequested++;
     }
 
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "--- [OT-Link] ---\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Uni: (%lu,%lu,%lu)/%lu\n", 
+           mCounters.mTxAcked, mCounters.mTxErrBusyChannel, 
+           mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel,
+           mCounters.mTxAckRequested);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Bro: %lu\n", mCounters.mTxNoAckRequested); 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "-----------------\n");
+#endif
+    /* Overhead statistics */
+    packetSuccessCnt = mCounters.mTxAcked;
+    packetFailCnt = mCounters.mTxAckRequested-mCounters.mTxAcked-mCounters.mTxErrBusyChannel;
+    packetBusyChannelCnt = mCounters.mTxErrBusyChannel;
+    broadcastCnt = mCounters.mTxNoAckRequested;
+
     // Determine next action based on current operation.
 
     switch (mOperation)
@@ -1688,6 +1709,9 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
 
     case Address::kTypeShort:
         otLogDebgMac(GetInstance(), "Received frame from short address 0x%04x", srcaddr.GetShort());
+#if ENABLE_DEBUG
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "[OT-MAC]: Rx pkt from short addr 0x%04x\n", srcaddr.GetShort());
+#endif
 
         if (neighbor == NULL)
         {
