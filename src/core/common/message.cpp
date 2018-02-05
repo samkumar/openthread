@@ -128,12 +128,12 @@ Buffer *MessagePool::NewBuffer(void)
 
     if (buffer == NULL)
     {
+        /* Overhead statistics */
+        queueOverflowCnt++;
         otLogInfoMem(GetInstance(), "No available message buffer");
 #if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
 #endif
-        /* Overhead statistics */
-        queueOverflowCnt++;
     }
 
     return buffer;
@@ -178,6 +178,8 @@ exit:
     }
     else
     {
+        /* Overhead statistics */
+        queueOverflowCnt++;
 #if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
 #endif

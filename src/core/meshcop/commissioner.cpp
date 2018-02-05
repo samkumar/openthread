@@ -109,7 +109,10 @@ otError Commissioner::Start(void)
 
     mState = OT_COMMISSIONER_STATE_PETITION;
     mTransmitAttempts = 0;
-
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Start\n");
+    printf("[OT-Comm]: Start\n");
+#endif
     SendPetition();
 
 exit:
@@ -433,6 +436,7 @@ otError Commissioner::SendMgmtCommissionerGetRequest(const uint8_t *aTlvs,
     otLogInfoMeshCoP(GetInstance(), "sent MGMT_COMMISSIONER_GET.req to leader");
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx MGMT_COMM_GET Req\n");
+    printf("[OT-Comm]: Tx MGMT_COMM_GET Req\n");
 #endif
 
 
@@ -464,6 +468,7 @@ void Commissioner::HandleMgmtCommissisonerGetResponse(Coap::Header *aHeader, Mes
     otLogInfoMeshCoP(GetInstance(), "received MGMT_COMMISSIONER_GET response");
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx MGMT_COMM_GET Resp\n");
+    printf("[OT-Comm]: Rx MGMT_COMM_GET Resp\n");
 #endif
 
 
@@ -533,6 +538,7 @@ otError Commissioner::SendMgmtCommissionerSetRequest(const otCommissioningDatase
 
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx MGMT_COMM_SET Req\n");
+    printf("[OT-Comm]: Tx MGMT_COMM_SET Req\n");
 #endif
 
     messageInfo.SetSockAddr(netif.GetMle().GetMeshLocal16());
@@ -574,6 +580,7 @@ void Commissioner::HandleMgmtCommissisonerSetResponse(Coap::Header *aHeader, Mes
     otLogInfoMeshCoP(GetInstance(), "received MGMT_COMMISSIONER_SET response");
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Rx MGMT_COMM_SET Resp\n");
+    printf("[OT-Comm]: Rx MGMT_COMM_SET Resp\n");
 #endif
 
 
@@ -616,6 +623,7 @@ otError Commissioner::SendPetition(void)
     otLogInfoMeshCoP(GetInstance(), "sent petition");
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MESH_COP, "[OT-Comm]: Tx Petition\n");
+    printf("[OT-Comm]: Tx Petition\n");
 #endif
 
 

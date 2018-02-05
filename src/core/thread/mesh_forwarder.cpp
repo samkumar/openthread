@@ -365,7 +365,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
 
 #if ENABLE_DEBUG
     uint16_t addr[8];
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Dest ");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to ");
     for (int i=0; i<8; i++) {
         addr[i] = ip6Header.GetDestination().mFields.m16[i];
         if (addr[i] != 0) {
@@ -386,7 +386,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
         if (ip6Header.GetDestination().IsLinkLocal() || ip6Header.GetDestination().IsLinkLocalMulticast())
         {
 #if ENABLE_DEBUG
-            otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
+            //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
 #endif
             GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);
         }
@@ -402,7 +402,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     {
 
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Multicast\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to Multicast\n");
 #endif
 
         // With the exception of MLE multicasts, a Thread End Device transmits multicasts,
@@ -420,7 +420,7 @@ otError MeshForwarder::UpdateIp6Route(Message &aMessage)
     {
 
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to LinkLocal\n");
 #endif
 
         GetMacDestinationAddress(ip6Header.GetDestination(), mMacDest);

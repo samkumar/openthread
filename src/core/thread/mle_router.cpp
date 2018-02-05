@@ -3893,14 +3893,14 @@ uint16_t MleRouter::GetNextHop(uint16_t aDestination)
 
         rval = GetRloc16(router->GetNextHop());
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Multihop\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Multihop\n");
 #endif
     }
     else if (linkCost < kMaxRouteCost)
     {
         rval = GetRloc16(destinationId);
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Singlehop\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Singlehop\n");
 #endif
     }
 

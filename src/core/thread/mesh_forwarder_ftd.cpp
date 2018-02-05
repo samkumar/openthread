@@ -821,7 +821,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     {
 
 #if ENABLE_DEBUG                    
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a neighbor node\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a neighbor node\n");
 #endif
 
         mMeshDest = neighbor->GetRloc16();
@@ -830,7 +830,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     {
 
 #if ENABLE_DEBUG                    
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a mesh node\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a mesh node\n");
 #endif
 
         SuccessOrExit(error = netif.GetAddressResolver().Resolve(ip6Header.GetDestination(), mMeshDest));
@@ -839,7 +839,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     {
 
 #if ENABLE_DEBUG                    
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to an external node\n");
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to an external node\n");
 #endif
 
         netif.GetNetworkDataLeader().RouteLookup(
@@ -864,7 +864,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
         mAddMeshHeader = true;
 
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Intermediate)\n", 
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Inter)\n", 
                   mMacDest.GetShort());
 #endif
 
@@ -872,7 +872,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
 
 #if ENABLE_DEBUG
     else {
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "     -- %4x (FinalDest)\n",
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "     -- %4x (FD)\n",
                   mMacDest.GetShort());
     }
 #endif

@@ -758,7 +758,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 
 #if ENABLE_DEBUG
     uint16_t addr[8];
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] From Src ");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] From ");
     for (int i=0; i<8; i++) {
         addr[i] = header.GetSource().mFields.m16[i];
         if (addr[i] != 0) {
@@ -858,7 +858,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
         /* hskim: force to have a valid Id */
         forwardInterfaceId = 1;
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] IfID: %u\n", forwardInterfaceId);
+        //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] IfID: %u\n", forwardInterfaceId);
 #endif
 
         if (forwardInterfaceId == 0)
