@@ -41,6 +41,11 @@
 #include "common/logging.hpp"
 #include "net/ip6.hpp"
 
+extern "C" {
+    void openthread_lock_buffer_mutex(void);
+    void openthread_unlock_buffer_mutex(void);
+}
+
 #define ENABLE_DEBUG (0)
 
 namespace ot {
@@ -106,6 +111,7 @@ void MessagePool::Free(Message *aMessage)
 Buffer *MessagePool::NewBuffer(void)
 {
     Buffer *buffer = NULL;
+    openthread_lock_buffer_mutex();
 
 #if OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
 
@@ -136,11 +142,14 @@ Buffer *MessagePool::NewBuffer(void)
 #endif
     }
 
+    openthread_unlock_buffer_mutex();
+
     return buffer;
 }
 
 void MessagePool::FreeBuffers(Buffer *aBuffer)
 {
+    openthread_lock_buffer_mutex();
     while (aBuffer != NULL)
     {
         Buffer *tmpBuffer = aBuffer->GetNextBuffer();
@@ -157,6 +166,7 @@ void MessagePool::FreeBuffers(Buffer *aBuffer)
 #endif // OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
         aBuffer = tmpBuffer;
     }
+    openthread_unlock_buffer_mutex();
 }
 
 otError MessagePool::ReclaimBuffers(int aNumBuffers)

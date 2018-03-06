@@ -388,6 +388,12 @@ OTAPI uint8_t OTCALL otIp6PrefixMatch(const otIp6Address *aFirst, const otIp6Add
  */
 bool otIp6IsAddressUnspecified(const otIp6Address *aAddress);
 
+/* samkumar: API extensions for TCP */
+
+otMessage *otIp6NewMessageForTransport(otInstance *aInstance, bool aLinkSecurityEnabled);
+
+otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessageInfo* aMessageInfo, uint8_t aIpProto);
+
 /**
  * @}
  *

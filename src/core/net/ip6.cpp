@@ -54,6 +54,11 @@
 #define ENABLE_DEBUG (1)
 #endif
 
+// For FreeBSD TCP
+extern "C" {
+    void tcp_freebsd_receive(void* iphdr, otMessage* message);
+}
+
 namespace ot {
 namespace Ip6 {
 
@@ -843,6 +848,11 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
         }
 
         ProcessReceiveCallback(aMessage, messageInfo, nextHeader, aFromNcpHost);
+
+        /* samkumar: Hook in here for TCP... */
+        if (nextHeader == kProtoTcp) {
+            tcp_freebsd_receive(&header, &aMessage);
+        }
 
         SuccessOrExit(error = HandlePayload(aMessage, messageInfo, nextHeader));
     }

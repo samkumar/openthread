@@ -252,3 +252,33 @@ bool otIp6IsAddressUnspecified(const otIp6Address *aAddress)
 {
     return static_cast<const Ip6::Address *>(aAddress)->IsUnspecified();
 }
+
+otMessage *otIp6NewMessageForTransport(otInstance *aInstance, bool aLinkSecurityEnabled)
+{
+    Instance &instance = *static_cast<Instance *>(aInstance);
+    Message *message = instance.GetIp6().NewMessage(0);
+
+    if (message)
+    {
+        message->SetLinkSecurityEnabled(aLinkSecurityEnabled);
+    }
+
+    return message;
+}
+
+otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessageInfo* aMessageInfo, uint8_t aIpProto)
+{
+    otError error;
+    Instance &instance = *static_cast<Instance *>(aInstance);
+    Message &message = *static_cast<Message *>(aMessage);
+    Ip6::MessageInfo &info = *static_cast<Ip6::MessageInfo *>(aMessageInfo);
+
+    error = instance.GetIp6().SendDatagram(message, info, (Ip6::IpProto) aIpProto);
+
+    return error;
+}
+
+bool otIp6IsAddressMulticast(const otIp6Address *aAddress)
+{
+    return static_cast<const Ip6::Address *>(aAddress)->IsMulticast();
+}
