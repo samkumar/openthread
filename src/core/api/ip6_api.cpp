@@ -266,7 +266,7 @@ otMessage *otIp6NewMessageForTransport(otInstance *aInstance, bool aLinkSecurity
     return message;
 }
 
-otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessageInfo* aMessageInfo, uint8_t aIpProto)
+otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessageInfo *aMessageInfo, uint8_t aIpProto)
 {
     otError error;
     Instance &instance = *static_cast<Instance *>(aInstance);
@@ -281,4 +281,9 @@ otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessa
 bool otIp6IsAddressMulticast(const otIp6Address *aAddress)
 {
     return static_cast<const Ip6::Address *>(aAddress)->IsMulticast();
+}
+
+uint16_t otMessageChecksum(uint16_t aChecksum, otMessage *aMessage) {
+    Message &message = *static_cast<Message *>(aMessage);
+    return message.UpdateChecksum(aChecksum, message.GetOffset(), message.GetLength() - message.GetOffset());
 }
