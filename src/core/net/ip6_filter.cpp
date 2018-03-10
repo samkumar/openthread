@@ -91,6 +91,7 @@ bool Filter::Accept(Message &aMessage) const
         VerifyOrExit(sizeof(tcp) == aMessage.Read(sizeof(ip6), sizeof(tcp), &tcp));
 
         dstport = tcp.GetDestinationPort();
+	rval = true;
 
         break;
 
@@ -100,13 +101,13 @@ bool Filter::Accept(Message &aMessage) const
     }
 
     // Check against allowed unsecure port list
-    for (int i = 0; i < kMaxUnsecurePorts; i++)
+    /*for (int i = 0; i < kMaxUnsecurePorts; i++)
     {
         if (mUnsecurePorts[i] != 0 && mUnsecurePorts[i] == dstport)
         {
             ExitNow(rval = true);
         }
-    }
+	}*/
 
 exit:
     return rval;

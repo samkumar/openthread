@@ -56,8 +56,8 @@
 
 // For FreeBSD TCP
 extern "C" {
-    void tcp_freebsd_receive(void* iphdr, otMessage* message, otMessageInfo* info);
-    void tcp_freebsd_finalize_cksum(otMessage* pkt, uint16_t cksum);
+  //void tcp_freebsd_receive(void* iphdr, otMessage* message, otMessageInfo* info);
+  //void tcp_freebsd_finalize_cksum(otMessage* pkt, uint16_t cksum);
 }
 
 namespace ot {
@@ -419,7 +419,7 @@ otError Ip6::SendDatagram(Message &aMessage, MessageInfo &aMessageInfo, IpProto 
         break;
 
     case kProtoTcp:
-        tcp_freebsd_finalize_cksum(&aMessage, checksum);
+      //tcp_freebsd_finalize_cksum(&aMessage, checksum);
         break;
 
     default:
@@ -856,7 +856,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 
         /* samkumar: Hook in here for TCP... */
         if (nextHeader == kProtoTcp) {
-            tcp_freebsd_receive(&header, &aMessage, &messageInfo);
+	  //tcp_freebsd_receive(&header, &aMessage, &messageInfo);
         }
 
         SuccessOrExit(error = HandlePayload(aMessage, messageInfo, nextHeader));
