@@ -56,7 +56,7 @@
 #if OPENTHREAD_ENABLE_BORDER_ROUTER
 #define ENABLE_DEBUG (0)
 #else
-#define ENABLE_DEBUG (1)
+#define ENABLE_DEBUG (0)
 #endif
 
 using ot::Encoding::BigEndian::HostSwap16;

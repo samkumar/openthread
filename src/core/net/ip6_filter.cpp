@@ -91,6 +91,7 @@ bool Filter::Accept(Message &aMessage) const
         VerifyOrExit(sizeof(tcp) == aMessage.Read(sizeof(ip6), sizeof(tcp), &tcp));
 
         dstport = tcp.GetDestinationPort();
+        rval = true;
 
         break;
 

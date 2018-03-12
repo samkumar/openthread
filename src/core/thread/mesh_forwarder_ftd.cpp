@@ -932,7 +932,7 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
     VerifyOrExit(meshHeader.Init(aFrame, aFrameLength) == OT_ERROR_NONE, error = OT_ERROR_DROP);
 
     // Security Check: only process Mesh Header frames that had security enabled.
-    VerifyOrExit(aLinkInfo.mLinkSecurity && meshHeader.IsValid(), error = OT_ERROR_SECURITY);
+    //VerifyOrExit(aLinkInfo.mLinkSecurity && meshHeader.IsValid(), error = OT_ERROR_SECURITY);
 
     meshSource.SetShort(meshHeader.GetSource());
     meshDest.SetShort(meshHeader.GetDestination());
