@@ -1196,7 +1196,11 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
         OT_UNUSED_VARIABLE(stringBuffer);
     }
 
-    link_vector[mTransmitAttempts]++;
+    if (aError == OT_ERROR_NONE) {
+        link_vector[mTransmitAttempts]++;
+    } else {
+        link_vector[mTransmitAttempts+1]++;
+    }
 
     mTransmitAttempts = 0;
 
