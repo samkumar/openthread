@@ -60,6 +60,10 @@
 
 using ot::Encoding::BigEndian::HostSwap64;
 
+extern "C" {
+    extern uint32_t link_vector[50];
+}
+
 namespace ot {
 namespace Mac {
 
@@ -1191,6 +1195,8 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
 
         OT_UNUSED_VARIABLE(stringBuffer);
     }
+
+    link_vector[mTransmitAttempts]++;
 
     mTransmitAttempts = 0;
 
