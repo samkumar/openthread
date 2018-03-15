@@ -548,7 +548,11 @@ otError MeshForwarder::SendMesh(Message &aMessage, Mac::Frame &aFrame)
     // initialize MAC header
     fcf = Mac::Frame::kFcfFrameData | Mac::Frame::kFcfPanidCompression | Mac::Frame::kFcfFrameVersion2006 |
           Mac::Frame::kFcfDstAddrShort | Mac::Frame::kFcfSrcAddrShort |
-          Mac::Frame::kFcfAckRequest | Mac::Frame::kFcfSecurityEnabled;
+          Mac::Frame::kFcfAckRequest;
+
+    if (aMessage.IsLinkSecurityEnabled()) {
+        fcf |= Mac::Frame::kFcfSecurityEnabled;
+    }
 
     aFrame.InitMacHeader(fcf, Mac::Frame::kKeyIdMode1 | Mac::Frame::kSecEncMic32);
     aFrame.SetDstPanId(netif.GetMac().GetPanId());
