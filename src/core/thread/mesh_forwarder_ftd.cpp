@@ -978,6 +978,8 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
         message->SetLinkSecurityEnabled(aLinkInfo.mLinkSecurity);
         message->SetPanId(aLinkInfo.mPanId);
 
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
+
         SendMessage(*message);
     }
 
