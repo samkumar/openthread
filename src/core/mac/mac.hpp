@@ -743,6 +743,11 @@ private:
     uint8_t mCsmaAttempts;
     uint8_t mTransmitAttempts;
 
+    struct {
+        ShortAddress addr;
+        uint8_t dsn;
+    } mDSNTable[16];
+
     uint32_t mScanChannels;
     uint16_t mScanDuration;
     uint8_t mScanChannel;

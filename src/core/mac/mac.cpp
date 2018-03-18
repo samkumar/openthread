@@ -143,6 +143,8 @@ Mac::Mac(Instance &aInstance):
     SetPanId(mPanId);
     SetExtAddress(mExtAddress);
     SetShortAddress(mShortAddress);
+
+    memset(&mDSNTable, 0x00, sizeof(mDSNTable));
 }
 
 otError Mac::ActiveScan(uint32_t aScanChannels, uint16_t aScanDuration, ActiveScanHandler aHandler, void *aContext)
@@ -1734,6 +1736,33 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
         }
 
         srcaddr.SetExtended(neighbor->GetExtAddress());
+
+        // samkumar: check the DSN in the table we are storing
+        if (!dstaddr.IsBroadcast()) {
+            bool found = false;
+            for (int i = 0; i != 16; i++) {
+                if (mDSNTable[i].addr == srcaddr.GetShort()) {
+                    found = true;
+                    if (mDSNTable[i].dsn == aFrame->GetSequence()) {
+                        printf("Dropping duplicate frame\n");
+                        ExitNow(error = OT_ERROR_DUPLICATED);
+                    }
+                    mDSNTable[i].dsn = aFrame->GetSequence();
+                    break;
+                }
+            }
+
+            if (!found) {
+                printf("First frame from this source address\n");
+                for (int i = 0; i != 16; i++) {
+                    if (mDSNTable[i].addr == 0x0000) {
+                        mDSNTable[i].addr = srcaddr.GetShort();
+                        mDSNTable[i].dsn = aFrame->GetSequence();
+                        break;
+                    }
+                }
+            }
+        }
 
     // fall through
 
