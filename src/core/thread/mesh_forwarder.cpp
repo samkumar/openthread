@@ -1429,6 +1429,8 @@ void MeshForwarder::HandleReassemblyTimer(void)
             LogIp6Message(kMessageReassemblyDrop, *message, NULL, OT_ERROR_REASSEMBLY_TIMEOUT);
             mIpCounters.mRxFailure++;
 
+            printf("6LoWPAN Reassembly Failed!\n");
+
             /* Overhead statistics */
             Ipv6RxFailCnt++;
 

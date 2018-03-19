@@ -146,7 +146,7 @@ Mac::Mac(Instance &aInstance):
     SetExtAddress(mExtAddress);
     SetShortAddress(mShortAddress);
 
-    memset(&mDSNTable, 0x00, sizeof(mDSNTable));
+    memset(&mDSNTable, 0xFF, sizeof(mDSNTable));
 }
 
 otError Mac::ActiveScan(uint32_t aScanChannels, uint16_t aScanDuration, ActiveScanHandler aHandler, void *aContext)
@@ -1759,7 +1759,7 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
             if (!found) {
                 printf("First frame from this source address\n");
                 for (int i = 0; i != 16; i++) {
-                    if (mDSNTable[i].addr == 0x0000) {
+                    if (mDSNTable[i].addr == 0xFFFF) {
                         mDSNTable[i].addr = srcaddr.GetShort();
                         mDSNTable[i].dsn = aFrame->GetSequence();
                         break;

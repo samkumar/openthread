@@ -146,6 +146,9 @@ otError MeshForwarder::SendMessage(Message &aMessage)
     mScheduleTransmissionTask.Post();
 
 exit:
+    if (error != OT_ERROR_NONE) {
+        printf("Dropped in MeshForwarder::SendMessage: %d\n", error);
+    }
     return error;
 }
 
@@ -982,12 +985,17 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
 
         SendMessage(*message);
     }
+    else
+    {
+        printf("Dropped in MeshForwarder::HandleMesh: HopsLeft = 0\n");
+    }
 
 exit:
 
     if (error != OT_ERROR_NONE)
     {
         char srcStringBuffer[Mac::Address::kAddressStringSize];
+        printf("Dropped in MeshForwarder::HandleMesh: %d\n", error);
 
         otLogInfoMac(
             GetInstance(),

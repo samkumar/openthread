@@ -137,9 +137,9 @@ Buffer *MessagePool::NewBuffer(void)
         /* Overhead statistics */
         queueOverflowCnt++;
         otLogInfoMem(GetInstance(), "No available message buffer");
-#if ENABLE_DEBUG
+//#if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
-#endif
+//#endif
     }
 
     openthread_unlock_buffer_mutex();
@@ -190,9 +190,9 @@ exit:
     {
         /* Overhead statistics */
         queueOverflowCnt++;
-#if ENABLE_DEBUG
+//#if ENABLE_DEBUG
         otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "\n[OT-MSG] No B!\n");
-#endif
+//#endif
         return OT_ERROR_NO_BUFS;
     }
 }
