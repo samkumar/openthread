@@ -1923,6 +1923,9 @@ exit:
 
     if (error != OT_ERROR_NONE)
     {
+        if (error == OT_ERROR_PARSE || error == OT_ERROR_SECURITY) {
+            printf("Dropping corrupt packet!\n");
+        }
         if (aFrame == NULL)
         {
             otLogInfoMac(GetInstance(), "Frame rx failed, error:%s", otThreadErrorToString(error));
