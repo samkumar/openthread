@@ -946,8 +946,13 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
 
     UpdateRoutes(aFrame, aFrameLength, meshSource, meshDest);
 
+    if (!(meshDest.GetShort() == netif.GetMac().GetShortAddress() ||
+        netif.GetMle().IsMinimalChild(meshDest.GetShort()))) {
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
+    }
+
     if (meshDest.GetShort() == netif.GetMac().GetShortAddress() ||
-        netif.GetMle().IsMinimalChild(meshDest.GetShort()))
+        netif.GetMle().IsMinimalChild(meshDest.GetShort()) || true)
     {
         aFrame += meshHeader.GetHeaderLength();
         aFrameLength -= meshHeader.GetHeaderLength();
