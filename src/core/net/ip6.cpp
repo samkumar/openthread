@@ -369,7 +369,7 @@ otError Ip6::SendDatagram(Message &aMessage, MessageInfo &aMessageInfo, IpProto 
     uint16_t checksum;
     const NetifUnicastAddress *source;
 
-    header.Init();
+    header.Init(aMessageInfo.mVersionClassFlow);
     header.SetPayloadLength(payloadLength);
     header.SetNextHeader(aIpProto);
     header.SetHopLimit(aMessageInfo.mHopLimit ? aMessageInfo.mHopLimit : static_cast<uint8_t>(kDefaultHopLimit));
@@ -755,6 +755,26 @@ exit:
     return error;
 }
 
+uint32_t avg = 0;
+// avg is binary fixed-point with 5 fractional bits
+#define AVG_SHIFT 5
+
+// Let wq = 1/32
+#define WQ_SHIFT 5
+
+#define MIN_TH 28
+#define MAX_TH 44
+
+#define MAX_P 0.125
+#define C1 0.0078125
+#define C1_SHIFT 7
+
+#define C2 0.21875
+#define C2_SHIFTED 7
+
+int32_t count = -1;
+uint32_t R;
+
 otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceId, const void *aLinkMessageInfo,
                             bool aFromNcpHost)
 {
@@ -792,6 +812,46 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     messageInfo.SetInterfaceId(aInterfaceId);
     messageInfo.SetHopLimit(header.GetHopLimit());
     messageInfo.SetLinkInfo(aLinkMessageInfo);
+
+    // samkumar: Peform RED
+    {
+        uint32_t q = kNumBuffers - GetInstance().GetMessagePool().GetFreeBufferCount();
+        if (q != 0) {
+            avg = avg + (((q << AVG_SHIFT) - avg) >> WQ_SHIFT);
+        } else {
+            // Hack for now.
+            avg = (q << AVG_SHIFT);
+        }
+        bool mark = false;
+        if ((MIN_TH << AVG_SHIFT) <= avg && avg < (MAX_TH << AVG_SHIFT)) {
+            count++;
+            uint32_t pb = (avg >> C1_SHIFT) - C2_SHIFTED;
+            if (count > 0 && ((uint32_t) count) >= (R / pb)) {
+                mark = true;
+                count = 0;
+            }
+            if (count == 0) {
+                R = otPlatRandomGet() & ((1 << AVG_SHIFT) - 1);
+            }
+        } else if ((MAX_TH << AVG_SHIFT) <= avg) {
+            mark = true;
+            count = -1;
+        } else {
+            count = -1;
+        }
+
+        // samkumar: Handle ECN
+        if (mark) {
+            uint32_t info;
+            aMessage.Read(0, sizeof(info), &info);
+            info = HostSwap32(info);
+            uint32_t ecn = (info & 0x00300000u) >> 20;
+            if (ecn == 0x1 || ecn == 0x2) {
+                info = HostSwap32(info | 0x00300000u);
+                aMessage.Write(0, sizeof(info), &info);
+            }
+        }
+    }
 
     // determine destination of packet
     if (header.GetDestination().IsMulticast())

@@ -448,6 +448,11 @@ typedef struct otMessageInfo
     otIp6Address mPeerAddr;
 
     /**
+     * samkumar: Flow info for IPv6
+     */
+    uint32_t mVersionClassFlow;
+
+    /**
      * The local transport-layer port.
      */
     uint16_t mSockPort;
