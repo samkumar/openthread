@@ -766,15 +766,15 @@ int32_t avg = 0;
 // Let wq = 1/32
 #define WQ_SHIFT 5
 
-#define MIN_TH 28
-#define MAX_TH 44
+#define MIN_TH 16
+#define MAX_TH 32
 
 #define MAX_P 0.125
 #define C1 0.0078125
 #define C1_SHIFT 7
 
-#define C2 0.21875
-#define C2_SHIFTED 7
+#define C2 0.125
+#define C2_SHIFTED 4
 
 int32_t count = -1;
 int32_t R;
