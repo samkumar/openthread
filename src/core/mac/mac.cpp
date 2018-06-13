@@ -62,9 +62,13 @@
 
 using ot::Encoding::BigEndian::HostSwap64;
 
+#define MEASURE_LINK_HISTOGRAM 0
+
+#if MEASURE_LINK_HISTOGRAM
 extern "C" {
     extern uint32_t link_vector[50];
 }
+#endif
 
 namespace ot {
 namespace Mac {
@@ -1202,11 +1206,13 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
         OT_UNUSED_VARIABLE(stringBuffer);
     }
 
+#if MEASURE_LINK_HISTOGRAM
     if (aError == OT_ERROR_NONE) {
         link_vector[mTransmitAttempts]++;
     } else {
         link_vector[mTransmitAttempts+1]++;
     }
+#endif
 
     mTransmitAttempts = 0;
 
@@ -1270,9 +1276,9 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
 
 #if ENABLE_DEBUG
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "--- [Link] ---\n");
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Uni: (%lu,%lu,%lu)/%lu\n", 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Uni: (%lu,%lu,%lu)/%lu\n",
            mCounters.mTxAcked, packetBusyChannelCnt, packetFailCnt, mCounters.mTxAckRequested);
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Bro: %lu\n", mCounters.mTxNoAckRequested); 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "Bro: %lu\n", mCounters.mTxNoAckRequested);
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MAC, "--------------\n\n");
 #endif
 
