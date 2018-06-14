@@ -630,12 +630,6 @@ otError Ip6::ProcessReceiveCallback(const Message &aMessage, const MessageInfo &
     VerifyOrExit(aFromNcpHost == false, error = OT_ERROR_DROP);
     VerifyOrExit(mReceiveIp6DatagramCallback != NULL, error = OT_ERROR_NO_ROUTE);
 
-    // samkumar: Do not forward TCP packets to wpantund
-    if (aIpProto == kProtoTcp) {
-        error = OT_ERROR_DROP;
-        goto exit;
-    }
-
     if (mIsReceiveIp6FilterEnabled)
     {
         // do not pass messages sent to an RLOC/ALOC
@@ -696,7 +690,7 @@ otError Ip6::ProcessReceiveCallback(const Message &aMessage, const MessageInfo &
             break;
         }
     }
-  
+
     /* Overhead statistics */
     totalSerialMsgCnt++;
 
