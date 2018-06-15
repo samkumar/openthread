@@ -58,8 +58,6 @@
 #define ENABLE_DEBUG (1)
 #endif
 
-#define SEQ_NUMBER_NYBBLE 0x1
-
 using ot::Encoding::BigEndian::HostSwap64;
 
 #define MEASURE_LINK_HISTOGRAM 0
@@ -1005,8 +1003,6 @@ void Mac::BeginTransmit(void)
             {
                 sendFrame.SetSequence(mDataSequence);
             }
-
-            sendFrame.SetSequence((sendFrame.GetSequence() & 0x0F) | (SEQ_NUMBER_NYBBLE << 4));
 
             break;
 
