@@ -93,12 +93,12 @@ int8_t Routes::Lookup(const Address &aSource, const Address &aDestination)
     uint8_t prefixMatch;
     int8_t rval = -1;
 
-printf("\n\n[OT-Ip6] Start to match\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n\n[OT-Ip6] Start to match\n");
 
     for (Route *cur = mRoutes; cur; cur = cur->mNext)
     {
         prefixMatch = cur->mPrefix.PrefixMatch(aDestination);
-printf("[OT-Ip6] Match %u\n", prefixMatch);
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-Ip6] Match %u\n", prefixMatch);
         if (prefixMatch < cur->mPrefixLength)
         {
             continue;

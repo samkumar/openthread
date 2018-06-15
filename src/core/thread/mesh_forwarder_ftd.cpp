@@ -827,7 +827,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     else if ((neighbor = netif.GetMle().GetNeighbor(ip6Header.GetDestination())) != NULL)
     {
 
-#if ENABLE_DEBUG                    
+#if ENABLE_DEBUG
         //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a neighbor node\n");
 #endif
 
@@ -836,7 +836,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     else if (netif.GetNetworkDataLeader().IsOnMesh(ip6Header.GetDestination()))
     {
 
-#if ENABLE_DEBUG                    
+#if ENABLE_DEBUG
         //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to a mesh node\n");
 #endif
 
@@ -845,7 +845,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
     else
     {
 
-#if ENABLE_DEBUG                    
+#if ENABLE_DEBUG
         //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "to an external node\n");
 #endif
 
@@ -871,7 +871,7 @@ otError MeshForwarder::UpdateIp6RouteFtd(Ip6::Header &ip6Header)
         mAddMeshHeader = true;
 
 #if ENABLE_DEBUG
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Inter)\n", 
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "    -- %4x (Inter)\n",
                   mMacDest.GetShort());
 #endif
 
@@ -948,7 +948,7 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
 
     if (!(meshDest.GetShort() == netif.GetMac().GetShortAddress() ||
         netif.GetMle().IsMinimalChild(meshDest.GetShort()))) {
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
     }
 
     if (meshDest.GetShort() == netif.GetMac().GetShortAddress() ||
@@ -986,7 +986,7 @@ void MeshForwarder::HandleMesh(uint8_t *aFrame, uint8_t aFrameLength, const Mac:
         message->SetLinkSecurityEnabled(aLinkInfo.mLinkSecurity);
         message->SetPanId(aLinkInfo.mPanId);
 
-        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "MH @ 0x%x from 0x%x: 0x%x -> 0x%x\n", netif.GetMac().GetShortAddress(), aMacSource.GetShort(), meshSource.GetShort(), meshDest.GetShort());
 
         SendMessage(*message);
     }
