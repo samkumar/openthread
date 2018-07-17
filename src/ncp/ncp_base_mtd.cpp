@@ -2814,9 +2814,15 @@ void NcpBase::HandleDatagramFromStack(otMessage *aMessage, void *aContext)
 
 void NcpBase::HandleDatagramFromStack(otMessage *aMessage)
 {
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Reached HandleDatagramFromStack\n");
+
     VerifyOrExit(aMessage != NULL);
 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "About to enqueue message\n");
+
     SuccessOrExit(otMessageQueueEnqueue(&mMessageQueue, aMessage));
+
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Enqueued message\n");
 
     // If there is no queued spinel command response, try to write/send
     // the datagram message immediately. If there is a queued response
@@ -2827,15 +2833,22 @@ void NcpBase::HandleDatagramFromStack(otMessage *aMessage)
 
     if (IsResponseQueueEmpty())
     {
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Response queue empty; sending!\n");
         IgnoreReturnValue(SendQueuedDatagramMessages());
+    }
+    else
+    {
+        otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Response queue full; waiting...\n");
     }
 
 exit:
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Exiting HandleDatagramFromStack\n");
     return;
 }
 
 otError NcpBase::SendDatagramMessage(otMessage *aMessage)
 {
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Sending datagram message\n");
     otError error = OT_ERROR_NONE;
     uint8_t header = SPINEL_HEADER_FLAG | SPINEL_HEADER_IID_0;
     bool isSecure = otMessageIsLinkSecurityEnabled(aMessage);
@@ -2859,6 +2872,7 @@ otError NcpBase::SendDatagramMessage(otMessage *aMessage)
     }
 
 exit:
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Exiting SendDatagramMessage: %d\n", error);
     return error;
 }
 

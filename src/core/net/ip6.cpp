@@ -697,9 +697,11 @@ otError Ip6::ProcessReceiveCallback(const Message &aMessage, const MessageInfo &
     // make a copy of the datagram to pass to host
     VerifyOrExit((messageCopy = aMessage.Clone()) != NULL, error = OT_ERROR_NO_BUFS);
     RemoveMplOption(*messageCopy);
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Invoking callback\n");
     mReceiveIp6DatagramCallback(messageCopy, mReceiveIp6DatagramCallbackContext);
 
 exit:
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Existing ProcessReceiveCallback: %d\n", error);
 
     switch (error)
     {
@@ -787,8 +789,12 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     uint8_t hopLimit;
     int8_t forwardInterfaceId;
 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] From ");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Got an IPv6 packet!\n");
 
     SuccessOrExit(error = header.Init(aMessage));
+
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Next Header: %d\n", static_cast<uint8_t>(header.GetNextHeader()));
 
 #if ENABLE_DEBUG
     uint16_t addr[8];
@@ -904,6 +910,8 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
         forward = false;
     }
 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Receive: %d, Forward: %d\n", receive, forward);
+
     // process IPv6 Payload
     if (receive)
     {
@@ -971,6 +979,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     }
 
 exit:
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Leaving HandleDatagram...\n");
 
     if (!tunnel && (error != OT_ERROR_NONE || !forward))
     {

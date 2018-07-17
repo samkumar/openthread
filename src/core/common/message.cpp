@@ -46,7 +46,7 @@ extern "C" {
     void openthread_unlock_buffer_mutex(void);
 }
 
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 
 namespace ot {
 
