@@ -808,7 +808,7 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
             otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, ":");
         }
     }
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n");
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n");
 #endif
 
     messageInfo.SetPeerAddr(header.GetSource());
