@@ -1974,6 +1974,8 @@ void MleRouter::HandleStateUpdateTimer(void)
 
     mStateUpdateTimer.Start(kStateUpdatePeriod);
 
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Number of active routers: %d\n", (int) GetActiveRouterCount());
+
     if (mChallengeTimeout > 0)
     {
         mChallengeTimeout--;
@@ -2018,7 +2020,12 @@ void MleRouter::HandleStateUpdateTimer(void)
 #if ENABLE_DEBUG
                 otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "[OT-MLERouter]: Willing to be R due to enough R-Addr capacity\n");
 #endif
+                // samkumar and hskim: Border router's router request should not be denied
+#if OPENTHREAD_ENABLE_BORDER_ROUTER
+                BecomeRouter(ThreadStatusTlv::kIAmBorderRouter);
+#else
                 BecomeRouter(ThreadStatusTlv::kTooFewRouters);
+#endif
             }
 
             if (!mAdvertiseTimer.IsRunning())
@@ -4651,6 +4658,8 @@ void MleRouter::HandleAddressSolicit(Coap::Header &aHeader, Message &aMessage, c
 
     case ThreadStatusTlv::kHaveChildIdRequest:
     case ThreadStatusTlv::kParentPartitionChange:
+    // samkumar and hskim: Border router's router request should not be denied
+    case ThreadStatusTlv::kIAmBorderRouter:
         break;
 
     default:
