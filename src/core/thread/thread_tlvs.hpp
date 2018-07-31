@@ -331,6 +331,7 @@ public:
         kTooFewRouters      = 2,  ///< Address Solicit due to too few routers.
         kHaveChildIdRequest = 3,  ///< Address Solicit due to child ID request.
         kParentPartitionChange = 4,  ///< Address Solicit due to parent partition change
+        kIAmBorderRouter = 5, ///< Address Solicit from border router trying to become a router (added by samkumar and hskim)
     };
 
     /**
