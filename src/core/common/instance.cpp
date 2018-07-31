@@ -47,6 +47,7 @@ namespace ot {
 
 // Define the raw storage used for OpenThread instance (in single-instance case).
 static otDEFINE_ALIGNED_VAR(sInstanceRaw, sizeof(Instance), uint64_t);
+static Instance* sInst;
 
 #endif
 
@@ -128,6 +129,7 @@ exit:
 void Instance::AfterInit(void)
 {
     mIsInitialized = true;
+    sInst = this;
 
     // Restore datasets and network information
 
