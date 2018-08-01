@@ -283,6 +283,14 @@ bool otIp6IsAddressMulticast(const otIp6Address *aAddress)
     return static_cast<const Ip6::Address *>(aAddress)->IsMulticast();
 }
 
+const otNetifAddress *otIp6SelectSourceAddress(otInstance *aInstance, const otIp6Address *aPeerAddress) {
+    Instance &instance = *static_cast<Instance *>(aInstance);
+    Ip6::MessageInfo peerInfo;
+    peerInfo.SetPeerAddr(*static_cast<const Ip6::Address *>(aPeerAddress));
+    const Ip6::NetifUnicastAddress* sourceAddress = instance.GetIp6().SelectSourceAddress(peerInfo);
+    return static_cast<const otNetifAddress *>(sourceAddress);
+}
+
 uint16_t otMessageChecksum(uint16_t aChecksum, otMessage *aMessage) {
     Message &message = *static_cast<Message *>(aMessage);
     return message.UpdateChecksum(aChecksum, message.GetOffset(), message.GetLength() - message.GetOffset());

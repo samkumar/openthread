@@ -394,6 +394,8 @@ otMessage *otIp6NewMessageForTransport(otInstance *aInstance, bool aLinkSecurity
 
 otError otIp6SendAsTransport(otInstance *aInstance, otMessage *aMessage, otMessageInfo* aMessageInfo, uint8_t aIpProto);
 
+const otNetifAddress *otIp6SelectSourceAddress(otInstance *aInstance, const otIp6Address *aPeerAddress);
+
 uint16_t otMessageChecksum(uint16_t aChecksum, otMessage *aMessage);
 
 /**
