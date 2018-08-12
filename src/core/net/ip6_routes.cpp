@@ -93,7 +93,7 @@ int8_t Routes::Lookup(const Address &aSource, const Address &aDestination)
     uint8_t prefixMatch;
     int8_t rval = -1;
 
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n\n[OT-Ip6] Start to match\n");
+    //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "\n\n[OT-Ip6] Start to match\n");
 
     for (Route *cur = mRoutes; cur; cur = cur->mNext)
     {

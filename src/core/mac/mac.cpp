@@ -1759,7 +1759,7 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
             }
 
             if (!found) {
-                printf("First frame from this source address\n");
+                //printf("First frame from this source address\n");
                 for (int i = 0; i != 16; i++) {
                     if (mDSNTable[i].addr == 0xFFFF) {
                         mDSNTable[i].addr = srcaddr.GetShort();
