@@ -78,7 +78,7 @@ enum
     kMinBackoff           = 1,                     ///< Minimum backoff (milliseconds).
 
     kAckTimeout           = 16,                    ///< Timeout for waiting on an ACK (milliseconds).
-    kDataPollTimeout      = 100,                   ///< Timeout for receiving Data Frame (milliseconds).
+    kDataPollTimeout      = 300,                   ///< Timeout for receiving Data Frame (milliseconds).
     kSleepDelay           = 300,                   ///< Max sleep delay when frame is pending (milliseconds).
     kNonceSize            = 13,                    ///< Size of IEEE 802.15.4 Nonce (bytes).
 

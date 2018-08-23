@@ -74,7 +74,7 @@ Mle::Mle(Instance &aInstance) :
     mRole(OT_DEVICE_ROLE_DISABLED),
 
     /* hskim: We want leaf node to sleep */
-    mDeviceMode(ModeTlv::kModeSecureDataRequest), 
+    mDeviceMode(ModeTlv::kModeSecureDataRequest/* | ModeTlv::kModeRxOnWhenIdle*/),
 
     mParentRequestState(kParentIdle),
     mReattachState(kReattachStop),

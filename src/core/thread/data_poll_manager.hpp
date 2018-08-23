@@ -194,6 +194,13 @@ public:
      */
     uint32_t GetKeepAlivePollPeriod(void) const;
 
+    /**
+     * This method sets the maximum polling period.
+     * samkumar: The purpose of this is to allow TCP to reduce the polling
+     * period when appropriate.
+     */
+    void SetMaxPollPeriod(uint32_t aPollPeriodMilliseconds);
+
 private:
     enum  // Poll period under different conditions (in milliseconds).
     {
@@ -224,6 +231,9 @@ private:
     uint32_t    mTimerStartTime;
     uint32_t    mExternalPollPeriod;
     uint32_t    mPollPeriod;
+
+    // samkumar: Added so poll period can be reduced by higher layer (e.g., TCP)
+    uint32_t    mMaxPollPeriod;
 
     TimerMilli  mTimer;
 

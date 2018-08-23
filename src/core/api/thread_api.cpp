@@ -555,3 +555,10 @@ const otIpCounters *otThreadGetIp6Counters(otInstance *aInstance)
 
     return &instance.GetThreadNetif().GetMeshForwarder().GetCounters();
 }
+
+void otThreadSetMaxPollInterval(otInstance *aInstance, uint32_t milliseconds) {
+    Instance &instance = *static_cast<Instance *>(aInstance);
+
+    DataPollManager &dpm = instance.GetThreadNetif().GetMeshForwarder().GetDataPollManager();
+    dpm.SetMaxPollPeriod(milliseconds);
+}

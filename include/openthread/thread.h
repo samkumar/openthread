@@ -534,14 +534,10 @@ OTAPI otError OTCALL otThreadSendDiagnosticReset(otInstance *aInstance, const ot
                                                  const uint8_t aTlvTypes[], uint8_t aCount);
 
 /**
- * Get the IPv6 counters.
- *
- * @param[in]  aInstance  A pointer to an OpenThread instance.
- *
- * @returns A pointer to the IPv6 counters.
- *
+ * Controlling the poll interval for TCP.
  */
-OTAPI const otIpCounters *OTCALL otThreadGetIp6Counters(otInstance *aInstance);
+void otThreadSetMaxPollInterval(otInstance *aInstance, uint32_t milliseconds);
+void otThreadUnsetMaxPollInterval(otInstance *aInstance);
 
 /**
  * @}

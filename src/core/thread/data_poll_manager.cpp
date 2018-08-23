@@ -61,6 +61,7 @@ DataPollManager::DataPollManager(Instance &aInstance):
     mTimerStartTime(0),
     mExternalPollPeriod(0),
     mPollPeriod(0),
+    mMaxPollPeriod(0), // samkumar: configurable by external applications
     mTimer(aInstance, &DataPollManager::HandlePollTimer, this),
     mEnabled(false),
     mAttachMode(false),
@@ -419,6 +420,12 @@ uint32_t DataPollManager::CalculatePollPeriod(void) const
         {
             period = kMinPollPeriod;
         }
+    }
+
+    // samkumar: Allow poll period to be reduced by higher layers (e.g., TCP)
+    if (mMaxPollPeriod != 0 && period > mMaxPollPeriod)
+    {
+        period = mMaxPollPeriod;
     }
 
     return period;
