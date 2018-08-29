@@ -112,4 +112,8 @@ extern uint32_t netdataMsgCnt;        // netdata packets counter
 extern uint32_t meshcopMsgCnt;        // meshcop packets counter
 extern uint32_t tmfMsgCnt;            // tmf packets counter
 extern uint32_t totalSerialMsgCnt;    // serial packets counter
+
+/* samkumar */
+extern uint32_t radioPollTx;
+extern uint32_t pollTimeoutCnt;
 #endif  // DEBUG_HPP_

@@ -1304,6 +1304,9 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
                 StartOperation(kOperationWaitingForData);
             }
 
+            /* Overhead statistics */
+            radioPollTx++;
+
             mCounters.mTxDataPoll++;
         }
         else
@@ -1477,6 +1480,8 @@ void Mac::HandleReceiveTimer(void)
     if (mOperation == kOperationWaitingForData)
     {
         otLogDebgMac(GetInstance(), "Data poll timeout");
+        /* Overhead statistics */
+        pollTimeoutCnt++;
 
         FinishOperation();
 
