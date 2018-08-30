@@ -51,7 +51,7 @@
 #if OPENTHREAD_ENABLE_BORDER_ROUTER
 #define ENABLE_DEBUG (0)
 #else
-#define ENABLE_DEBUG (1)
+#define ENABLE_DEBUG (0)
 #endif
 
 namespace ot {
@@ -106,6 +106,10 @@ otError DataPollManager::SendDataPoll(void)
     otError error;
     Message *message;
     Neighbor *parent;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Poll timer expired\n");
+#endif
 
     VerifyOrExit(mEnabled, error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(!netif.GetMac().GetRxOnWhenIdle(), error = OT_ERROR_INVALID_STATE);
@@ -203,9 +207,22 @@ uint32_t DataPollManager::GetKeepAlivePollPeriod(void) const
     return period;
 }
 
+void DataPollManager::SetMaxPollPeriod(uint32_t aMaxPollPeriodMilliseconds)
+{
+    mMaxPollPeriod = aMaxPollPeriodMilliseconds;
+    if (mEnabled)
+    {
+        ScheduleNextPoll(kRecalculatePollPeriod);
+    }
+}
+
 void DataPollManager::HandlePollSent(otError aError)
 {
     bool shouldRecalculatePollPeriod = false;
+
+#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "Handle poll sent\n");
+#endif
 
     VerifyOrExit(mEnabled);
 
