@@ -2184,7 +2184,8 @@ otError NcpBase::SetPropertyHandler_STREAM_NET_INSECURE(void)
     SuccessOrExit(error = otMessageAppend(message, framePtr, frameLen));
 
     // Ensure the insecure message is forwarded using direct transmission.
-    otMessageSetDirectTransmission(message, true);
+    /* samkumar: commenting this out so insecure packets work properly. */
+    //otMessageSetDirectTransmission(message, true);
 
     error = otIp6Send(mInstance, message);
 
