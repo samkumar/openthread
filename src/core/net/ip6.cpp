@@ -934,9 +934,17 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
     {
         forwardInterfaceId = FindForwardInterfaceId(messageInfo);
 
-        #if ENABLE_DEBUG
+#if ENABLE_DEBUG
         //otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-IPv6] IfID: %u\n", forwardInterfaceId);
 #endif
+
+        // samkumar: Drop packets at application layer to simulate loss
+        if ((aFromNcpHost || forwardInterfaceId == 0) && (nextHeader == kProtoTcp || nextHeader == kProtoUdp)) {
+#define PERCENT 42949673
+            if (otPlatRandomGet() < 12 * PERCENT) {
+                ExitNow(error = OT_ERROR_DROP);
+            }
+        }
 
         if (forwardInterfaceId == 0)
         {
