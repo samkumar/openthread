@@ -774,6 +774,8 @@ private:
 
     SuccessRateTracker mCcaSuccessRateTracker;
     uint16_t mCcaSampleCount;
+
+    bool mWaitedCsma;
 };
 
 /**

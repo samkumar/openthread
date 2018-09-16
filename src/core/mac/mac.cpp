@@ -134,7 +134,8 @@ Mac::Mac(Instance &aInstance):
     mOobFrame(NULL),
     mKeyIdMode2FrameCounter(0),
     mCcaSuccessRateTracker(),
-    mCcaSampleCount(0)
+    mCcaSampleCount(0),
+    mWaitedCsma(false)
 {
     GenerateExtAddress(&mExtAddress);
 
@@ -858,6 +859,15 @@ void Mac::StartCsmaBackoff(void)
         // If the radio supports CSMA back off logic, immediately schedule the send.
         BeginTransmit();
     }
+    /*
+     * This else if case added by samkumar, to avoid CSMA backoff twice in a
+     * row if the frame is cancelled.
+     */
+    else if (mWaitedCsma)
+    {
+        mWaitedCsma = false;
+        mBackoffTimer.Start(0);
+    }
     else
     {
         uint32_t backoffExponent = kMinBE + mTransmitAttempts + mCsmaAttempts;
@@ -967,10 +977,13 @@ void Mac::BeginTransmit(void)
     Frame &sendFrame(*GetOperationFrame());
 
     /*
-     * samkumar: Allow the sending of this frame to be canceled here.
+     * samkumar: Allow the sending of this frame to be cancelled here.
      */
     if (check_cancelled_frame(sendFrame.GetSequence())) {
+        mWaitedCsma = true;
         ExitNow(error = OT_ERROR_ABORT);
+    } else {
+        mWaitedCsma = false;
     }
 
 #if OPENTHREAD_CONFIG_DISABLE_CCA_ON_LAST_ATTEMPT

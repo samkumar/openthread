@@ -521,6 +521,10 @@ otError MeshForwarder::HandleFrameRequest(Mac::Sender &aSender, Mac::Frame &aFra
     return aSender.GetOwner<MeshForwarder>().HandleFrameRequest(aFrame);
 }
 
+extern "C" {
+    void set_current_packet_is_indirect(bool);
+}
+
 otError MeshForwarder::HandleFrameRequest(Mac::Frame &aFrame)
 {
     ThreadNetif &netif = GetNetif();
@@ -535,8 +539,15 @@ otError MeshForwarder::HandleFrameRequest(Mac::Frame &aFrame)
         SendEmptyFrame(aFrame, false);
         aFrame.SetIsARetransmission(false);
         aFrame.SetMaxTxAttempts(Mac::kDirectFrameMacTxAttempts);
+
+        /* samkumar */
+        set_current_packet_is_indirect(false);
+
         ExitNow();
     }
+
+    /* samkumar */
+    set_current_packet_is_indirect(!mSendMessage->GetDirectTransmission());
 
     switch (mSendMessage->GetType())
     {
