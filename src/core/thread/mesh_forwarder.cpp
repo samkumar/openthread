@@ -964,6 +964,15 @@ void MeshForwarder::HandleSentFrame(Mac::Frame &aFrame, otError aError)
 
     VerifyOrExit(mEnabled);
 
+    /*
+     * samkumar: If the frame was cancelled, then skip most of the processing.
+     * We just need to dispatch the next frame, keeping the cancelled one in
+     * the queue so that it can be properly sent later.
+     */
+    if (aError == OT_ERROR_ABORT) {
+        ExitNow();
+    }
+
     if (mSendMessage != NULL)
     {
         mSendMessage->SetOffset(mMessageNextOffset);

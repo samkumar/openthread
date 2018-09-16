@@ -956,11 +956,22 @@ Frame *Mac::GetOperationFrame(void)
     return frame;
 }
 
+extern "C" {
+    bool check_cancelled_frame(uint16_t);
+}
+
 void Mac::BeginTransmit(void)
 {
     otError error = OT_ERROR_NONE;
     bool applyTransmitSecurity = true;
     Frame &sendFrame(*GetOperationFrame());
+
+    /*
+     * samkumar: Allow the sending of this frame to be canceled here.
+     */
+    if (check_cancelled_frame(sendFrame.GetSequence())) {
+        ExitNow(error = OT_ERROR_ABORT);
+    }
 
 #if OPENTHREAD_CONFIG_DISABLE_CCA_ON_LAST_ATTEMPT
 
@@ -1096,6 +1107,19 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
     bool ackRequested;
     Neighbor *neighbor;
 
+    /* samkumar: check if the frame is cancelled. */
+    bool cancelled = check_cancelled_frame(sendFrame.GetSequence()) || aError == OT_ERROR_ABORT;
+    if (cancelled && aError != OT_ERROR_NONE) {
+        /*
+         * samkumar: If the frame was properly sent, OpenThread will do the
+         * right thing. But if not, we need to AVOID performing a link-layer
+         * retry and just skip to the next indirect frame in the MeshForwarder,
+         * since a child is waiting for us with its radio on and we want to
+         * service it ASAP.
+         */
+        aError = OT_ERROR_ABORT;
+    }
+
     // Stop the ack timer.
 
     mMacTimer.Stop();
@@ -1183,7 +1207,8 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
 
     mTransmitAttempts++;
 
-    if (aError != OT_ERROR_NONE)
+    /* samkumar: I added the "!cancelled" clause. */
+    if (aError != OT_ERROR_NONE && !cancelled)
     {
         char stringBuffer[Frame::kInfoStringSize];
 

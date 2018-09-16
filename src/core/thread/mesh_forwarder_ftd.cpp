@@ -572,6 +572,10 @@ otError MeshForwarder::SendMesh(Message &aMessage, Mac::Frame &aFrame)
     return OT_ERROR_NONE;
 }
 
+extern "C" {
+    void cancel_frame(uint16_t);
+}
+
 void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otThreadLinkInfo &aLinkInfo)
 {
     ThreadNetif &netif = GetNetif();
@@ -594,6 +598,16 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otTh
     }
 
     mScheduleTransmissionTask.Post();
+
+    /*
+     * samkumar: If we're transmitting another frame to a powered router, we
+     * need to stop ASAP and send the indirect message right away. Indirect
+     * messages need to be sent with priority. Otherwise we're wasting the
+     * child node's power when sending other frames.
+     */
+    if (mSendBusy && mSendMessage != NULL && mSendMessage->GetDirectTransmission()) {
+        cancel_frame(mSendMessageDataSequenceNumber);
+    }
 
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d, rss:%d", child->GetRloc16(), indirectMsgCount,
                  aLinkInfo.mRss);
