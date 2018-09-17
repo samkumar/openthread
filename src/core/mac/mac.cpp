@@ -606,6 +606,11 @@ void Mac::PerformOperation(Tasklet &aTasklet)
     aTasklet.GetOwner<Mac>().PerformOperation();
 }
 
+extern "C" {
+    void start_listening(void);
+    void end_listening(void);
+}
+
 void Mac::PerformOperation(void)
 {
     VerifyOrExit(mOperation == kOperationIdle);
@@ -618,6 +623,8 @@ void Mac::PerformOperation(void)
     {
         mPendingWaitingForData = false;
         mOperation = kOperationWaitingForData;
+        /* samkumar */
+        start_listening();
         RadioReceive(mChannel);
     }
     else if (mPendingTransmitOobFrame)
@@ -669,6 +676,11 @@ void Mac::FinishOperation(void)
     // Clear the current operation and start any pending ones.
 
     otLogDebgMac(GetInstance(), "Finishing operation \"%s\"", OperationToString(mOperation));
+
+    /* samkumar */
+    if (mOperation == kOperationWaitingForData) {
+        end_listening();
+    }
 
     mOperation = kOperationIdle;
 
