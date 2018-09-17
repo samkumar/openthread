@@ -1798,33 +1798,6 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
 
         srcaddr.SetExtended(neighbor->GetExtAddress());
 
-        // samkumar: check the DSN in the table we are storing
-        if (!dstaddr.IsBroadcast()) {
-            bool found = false;
-            for (int i = 0; i != 16; i++) {
-                if (mDSNTable[i].addr == srcaddr.GetShort()) {
-                    found = true;
-                    if (mDSNTable[i].dsn == aFrame->GetSequence()) {
-                        printf("Dropping duplicate frame\n");
-                        ExitNow(error = OT_ERROR_DUPLICATED);
-                    }
-                    mDSNTable[i].dsn = aFrame->GetSequence();
-                    break;
-                }
-            }
-
-            if (!found) {
-                printf("First frame from this source address\n");
-                for (int i = 0; i != 16; i++) {
-                    if (mDSNTable[i].addr == 0xFFFF) {
-                        mDSNTable[i].addr = srcaddr.GetShort();
-                        mDSNTable[i].dsn = aFrame->GetSequence();
-                        break;
-                    }
-                }
-            }
-        }
-
     // fall through
 
     case Address::kTypeExtended:
@@ -1938,6 +1911,33 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
 
     default:
         break;
+    }
+
+    // samkumar: check the DSN in the table we are storing
+    if (!dstaddr.IsBroadcast()) {
+        bool found = false;
+        for (int i = 0; i != 16; i++) {
+            if (mDSNTable[i].addr == srcaddr.GetShort()) {
+                found = true;
+                if (mDSNTable[i].dsn == aFrame->GetSequence()) {
+                    printf("Dropping duplicate frame\n");
+                    ExitNow(error = OT_ERROR_DUPLICATED);
+                }
+                mDSNTable[i].dsn = aFrame->GetSequence();
+                break;
+            }
+        }
+
+        if (!found) {
+            printf("First frame from this source address\n");
+            for (int i = 0; i != 16; i++) {
+                if (mDSNTable[i].addr == 0xFFFF) {
+                    mDSNTable[i].addr = srcaddr.GetShort();
+                    mDSNTable[i].dsn = aFrame->GetSequence();
+                    break;
+                }
+            }
+        }
     }
 
     switch (aFrame->GetType())
