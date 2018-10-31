@@ -74,7 +74,7 @@ Mle::Mle(Instance &aInstance) :
     mRole(OT_DEVICE_ROLE_DISABLED),
 
     /* hskim: We want leaf node to sleep */
-    mDeviceMode(ModeTlv::kModeSecureDataRequest/* | ModeTlv::kModeRxOnWhenIdle*/),
+    mDeviceMode(ModeTlv::kModeSecureDataRequest | ModeTlv::kModeRxOnWhenIdle),
 
     mParentRequestState(kParentIdle),
     mReattachState(kReattachStop),
@@ -656,7 +656,7 @@ otError Mle::SetStateChild(uint16_t aRloc16)
     }
 
     /* Overhead statistics */
-    myRloc = aRloc16;    
+    myRloc = aRloc16;
 
     SetRloc16(aRloc16);
     mRole = OT_DEVICE_ROLE_CHILD;
@@ -1977,7 +1977,7 @@ otError Mle::SendChildUpdateRequest(void)
     }
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, "\n\n");
 #endif
-    
+
     /* Overhead statistics */
     myRloc = GetRloc16();
     nextHopRloc = mParent.GetRloc16();
