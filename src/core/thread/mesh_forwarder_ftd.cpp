@@ -607,14 +607,15 @@ void MeshForwarder::HandleDataRequest(const Mac::Address &aMacSource, const otTh
      */
     if (mSendBusy && mSendMessage != NULL && mSendMessage->GetDirectTransmission()) {
         cancel_frame(mSendMessageDataSequenceNumber);
+        //printf("Cancel %d !\n", (int) mSendMessageDataSequenceNumber);
     }
 
     otLogInfoMac(GetInstance(), "Rx data poll, src:0x%04x, qed_msgs:%d, rss:%d", child->GetRloc16(), indirectMsgCount,
                  aLinkInfo.mRss);
 
-#if ENABLE_DEBUG
-    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_IP6, "[OT-MF]: Rx Data Poll, src:0x%04x, qed_msgs:%d, rss:%d\n", child->GetRloc16(), indirectMsgCount, aLinkInfo.mRss);
-#endif
+//#if ENABLE_DEBUG
+    otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MEM, "[OT-MF]: Rx Data Poll, src:0x%04x, qed_msgs:%d, rss:%d\n", child->GetRloc16(), indirectMsgCount, aLinkInfo.mRss);
+//#endif
 
 exit:
     return;

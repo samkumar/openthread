@@ -56,7 +56,7 @@
 #if OPENTHREAD_ENABLE_BORDER_ROUTER
 #define ENABLE_DEBUG (0)
 #else
-#define ENABLE_DEBUG (0)
+#define ENABLE_DEBUG (1)
 #endif
 
 using ot::Encoding::BigEndian::HostSwap16;
@@ -1811,7 +1811,18 @@ void MleRouter::UpdateRoutes(const RouteTlv &aRoute, uint8_t aRouterId)
     otPlatLog(OT_LOG_LEVEL_INFO, OT_LOG_REGION_MLE, " ID NH RC LC NHLC\n");//InLinkQ  OutLinkQ\n");    
     // resolve border router EID to RLOC16
     ot::Ip6::Address borderIP;
-    otIp6AddressFromString("fdde:ad00:beef:0000:c684:4ab6:ac8f:9fe5", &borderIP);
+    {
+        otIp6AddressFromString("2600:1f1c:0c93:da00:76c2:1dbd:72c2:d063", &borderIP);
+        ot::Ip6::Address sourceIP;
+        otIp6AddressFromString("2001:470:4a71:f110:0000:0000:0000:0000", &sourceIP);
+        uint16_t rlocBR = 0xffff;
+        GetNetif().GetNetworkDataLeader().RouteLookup(sourceIP, borderIP, NULL, &rlocBR);
+        printf("Border router RLOC is %x\n", rlocBR);
+        if (rlocBR != 0xffff) {
+            printf("Next hop RLOC is %x\n", GetNextHop(rlocBR));
+        }
+    }
+    otIp6AddressFromString("fdde:ad00:beef:0:cc1e:c6e2:8252:e44b", &borderIP);
     otShortAddress borderRloc16;
     GetNetif().GetAddressResolver().Resolve(borderIP, borderRloc16);
 #endif

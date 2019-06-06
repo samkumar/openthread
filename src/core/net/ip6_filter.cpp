@@ -84,6 +84,8 @@ bool Filter::Accept(Message &aMessage) const
             ExitNow(rval = true);
         }
 
+        rval = true;
+
         break;
 
     case kProtoTcp:

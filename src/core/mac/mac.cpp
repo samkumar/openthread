@@ -867,6 +867,7 @@ void Mac::StartCsmaBackoff(void)
     {
         mWaitedCsma = false;
         mBackoffTimer.Start(0);
+        //printf("skipped backoff\n");
     }
     else
     {
@@ -1049,6 +1050,7 @@ void Mac::BeginTransmit(void)
     error = RadioReceive(sendFrame.GetChannel());
     assert(error == OT_ERROR_NONE);
 
+    //printf("Sending frame %d (DRQ = %d)\n", (int) sendFrame.GetSequence(), sendFrame.IsDataRequestCommand() ? 1 : 0);
     error = RadioTransmit(&sendFrame);
     assert(error == OT_ERROR_NONE);
 
@@ -1340,6 +1342,9 @@ void Mac::HandleTransmitDone(otRadioFrame *aFrame, otRadioFrame *aAckFrame, otEr
             {
                 mReceiveTimer.Start(kDataPollTimeout);
                 StartOperation(kOperationWaitingForData);
+                printf("DRQ: pending\n");
+            } else {
+                //printf("DRQ: not pending\n");
             }
 
             /* Overhead statistics */
@@ -1518,6 +1523,7 @@ void Mac::HandleReceiveTimer(void)
     if (mOperation == kOperationWaitingForData)
     {
         otLogDebgMac(GetInstance(), "Data poll timeout");
+        printf("Data poll timeout!!\n");
         /* Overhead statistics */
         pollTimeoutCnt++;
 
@@ -1530,6 +1536,7 @@ void Mac::HandleReceiveTimer(void)
     }
     else
     {
+        printf("Sleep delay timeout!\n");
         otLogDebgMac(GetInstance(), "Sleep delay timeout expired");
 
         UpdateIdleMode();
@@ -1722,6 +1729,8 @@ void Mac::HandleReceivedFrame(Frame *aFrame, otError aError)
 
     VerifyOrExit(error == OT_ERROR_NONE);
     VerifyOrExit(aFrame != NULL, error = OT_ERROR_NO_FRAME_RECEIVED);
+
+    printf("Received frame (seq = %d)\n", (int) aFrame->GetSequence());
 
     aFrame->SetSecurityValid(false);
 
