@@ -939,12 +939,15 @@ otError Ip6::HandleDatagram(Message &aMessage, Netif *aNetif, int8_t aInterfaceI
 #endif
 
         // samkumar: Drop packets at application layer to simulate loss
-        if ((aFromNcpHost || forwardInterfaceId == 0) && (nextHeader == kProtoTcp || nextHeader == kProtoUdp)) {
+        /*if ((aFromNcpHost || forwardInterfaceId == 0) && (nextHeader == kProtoTcp || nextHeader == kProtoUdp)) {
 #define PERCENT 42949673
+            printf("D -> ");
             if (otPlatRandomGet() < 12 * PERCENT) {
+                printf("Y\n");
                 ExitNow(error = OT_ERROR_DROP);
             }
-        }
+            printf("N\n");
+        }*/
 
         if (forwardInterfaceId == 0)
         {
