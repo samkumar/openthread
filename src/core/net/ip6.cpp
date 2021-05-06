@@ -69,6 +69,7 @@ Ip6::Ip6(Instance &aInstance)
     , mReceiveIp6DatagramCallbackContext(nullptr)
     , mSendQueueTask(aInstance, Ip6::HandleSendQueue)
     , mIcmp(aInstance)
+    , mTcp(aInstance)
     , mUdp(aInstance)
     , mMpl(aInstance)
 {
@@ -963,6 +964,13 @@ Error Ip6::HandlePayload(Message &          aMessage,
 
     switch (aIpProto)
     {
+    case kProtoTcp:
+        error = mTcp.ProcessReceivedSegment(*message, aMessageInfo);
+        if (error == kErrorDrop)
+        {
+            otLogNoteIp6("Error TCP Checksum");
+        }
+        break;
     case kProtoUdp:
         error = mUdp.HandleMessage(*message, aMessageInfo);
         if (error == kErrorDrop)

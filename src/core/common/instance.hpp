@@ -645,6 +645,11 @@ template <> inline NetworkData::Service::Manager &Instance::Get(void)
     return mThreadNetif.mNetworkDataServiceManager;
 }
 
+template <> inline Ip6::Tcp &Instance::Get(void)
+{
+    return mIp6.mTcp;
+}
+
 template <> inline Ip6::Udp &Instance::Get(void)
 {
     return mIp6.mUdp;
