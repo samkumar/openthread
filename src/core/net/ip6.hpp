@@ -53,6 +53,7 @@
 #include "net/ip6_mpl.hpp"
 #include "net/netif.hpp"
 #include "net/socket.hpp"
+#include "net/tcp6.hpp"
 #include "net/udp6.hpp"
 
 namespace ot {
@@ -373,6 +374,7 @@ private:
     Tasklet       mSendQueueTask;
 
     Icmp mIcmp;
+    Tcp  mTcp;
     Udp  mUdp;
     Mpl  mMpl;
 
