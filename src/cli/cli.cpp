@@ -108,6 +108,7 @@ Interpreter::Interpreter(Instance *aInstance, otCliOutputCallback aCallback, voi
 #endif
     , mDataset(*this)
     , mNetworkData(*this)
+    , mTcp(*this)
     , mUdp(*this)
 #if OPENTHREAD_CONFIG_COAP_API_ENABLE
     , mCoap(*this)
@@ -4354,6 +4355,11 @@ otError Interpreter::ProcessTxPower(uint8_t aArgsLength, Arg aArgs[])
 
 exit:
     return error;
+}
+
+otError Interpreter::ProcessTcp(uint8_t aArgsLength, Arg aArgs[])
+{
+    return mTcp.Process(aArgsLength, aArgs);
 }
 
 otError Interpreter::ProcessUdp(uint8_t aArgsLength, Arg aArgs[])

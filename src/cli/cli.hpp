@@ -47,6 +47,7 @@
 #include <openthread/ip6.h>
 #include <openthread/link.h>
 #include <openthread/sntp.h>
+#include <openthread/tcp.h>
 #include <openthread/thread.h>
 #include <openthread/thread_ftd.h>
 #include <openthread/udp.h>
@@ -57,6 +58,7 @@
 #include "cli/cli_network_data.hpp"
 #include "cli/cli_srp_client.hpp"
 #include "cli/cli_srp_server.hpp"
+#include "cli/cli_tcp.hpp"
 #include "cli/cli_udp.hpp"
 #if OPENTHREAD_CONFIG_COAP_API_ENABLE
 #include "cli/cli_coap.hpp"
@@ -96,6 +98,7 @@ class Interpreter
     friend class NetworkData;
     friend class SrpClient;
     friend class SrpServer;
+    friend class TcpExample;
     friend class UdpExample;
 
 public:
@@ -540,6 +543,7 @@ private:
     otError ProcessThread(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessDataset(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessTxPower(uint8_t aArgsLength, Arg aArgs[]);
+    otError ProcessTcp(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessUdp(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessUnsecurePort(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessVersion(uint8_t aArgsLength, Arg aArgs[]);
@@ -805,6 +809,7 @@ private:
         {"srp", &Interpreter::ProcessSrp},
 #endif
         {"state", &Interpreter::ProcessState},
+        {"tcp", &Interpreter::ProcessTcp},
         {"thread", &Interpreter::ProcessThread},
         {"txpower", &Interpreter::ProcessTxPower},
         {"udp", &Interpreter::ProcessUdp},
@@ -826,6 +831,7 @@ private:
 
     Dataset     mDataset;
     NetworkData mNetworkData;
+    TcpExample  mTcp;
     UdpExample  mUdp;
 
 #if OPENTHREAD_CONFIG_COAP_API_ENABLE
