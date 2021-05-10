@@ -200,7 +200,11 @@ typedef struct otTcpEndpoint
     otTcpReceiveAvailable mReceiveAvailableCallback;  ///< "Receive available" callback function
     otTcpDisconnected mDisconnectedCallback;          ///< "Disconnected" callback function
 
-    /* Other implementation-defined fields go here. */
+    union
+    {
+        void *mAlign;
+        uint8_t mSize[4 * sizeof(void *)];
+    } mTimers[4];
 } otTcpEndpoint;
 
 /**
@@ -536,8 +540,6 @@ typedef struct otTcpListener
     void *mContext;                         ///< A pointer to application-specific context
     otTcpAcceptReady mAcceptReadyCallback;  ///< "Accept ready" callback function
     otTcpAcceptDone mAcceptDoneCallback;    ///< "Accept done" callback function
-
-    /* Other implementation-defined fields go here. */
 } otTcpListener;
 
 /**
