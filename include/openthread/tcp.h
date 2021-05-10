@@ -38,6 +38,8 @@
 
 #include <openthread/ip6.h>
 
+#include "../third_party/tcplp/tcplp.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -205,6 +207,8 @@ typedef struct otTcpEndpoint
         void *mAlign;
         uint8_t mSize[4 * sizeof(void *)];
     } mTimers[4];
+
+    struct tcpcb mTcb;
 } otTcpEndpoint;
 
 /**
@@ -540,6 +544,8 @@ typedef struct otTcpListener
     void *mContext;                         ///< A pointer to application-specific context
     otTcpAcceptReady mAcceptReadyCallback;  ///< "Accept ready" callback function
     otTcpAcceptDone mAcceptDoneCallback;    ///< "Accept done" callback function
+
+    struct tcpcb_listen mTcbListen;
 } otTcpListener;
 
 /**

@@ -39,9 +39,12 @@ EXTRA_DIST                              = \
 DIST_SUBDIRS                            = \
     jlink                                 \
     mbedtls                               \
+    tcplp                                 \
     $(NULL)
 
-SUBDIRS =
+SUBDIRS =                                 \
+    tcplp                                 \
+    $(NULL)
 
 if OPENTHREAD_PLATFORM_NRF52811
 SUBDIRS                                += \
@@ -52,6 +55,7 @@ endif
 if OPENTHREAD_EXAMPLES_NRF52811
 SUBDIRS                                += \
     jlink                                 \
+	tcplp                                 \
     $(NULL)
 endif
 
