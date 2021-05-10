@@ -1002,6 +1002,7 @@ src/lib/url/Makefile
 third_party/Makefile
 third_party/jlink/Makefile
 third_party/mbedtls/Makefile
+third_party/tcplp/Makefile
 third_party/NordicSemiconductor/Makefile
 examples/Makefile
 examples/apps/Makefile
