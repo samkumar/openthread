@@ -33,63 +33,83 @@
 
 #include "tcp6.hpp"
 
+#include <new>
+
 #include "common/code_utils.hpp"
 #include "common/error.hpp"
+#include "net/ip6.hpp"
 
 namespace ot {
 namespace Ip6 {
 
+void Tcp::Endpoint::Initialize(Instance &aInstance)
+{
+    IgnoreReturnValue(new (&GetDelackTimer()) TimerMilli(aInstance, HandleDelackTimer));
+    IgnoreReturnValue(new (&GetRexmtPersistTimer()) TimerMilli(aInstance, HandleRexmtPersistTimer));
+    IgnoreReturnValue(new (&GetKeepTimer()) TimerMilli(aInstance, HandleKeepTimer));
+    IgnoreReturnValue(new (&Get2MslTimer()) TimerMilli(aInstance, Handle2MslTimer));
+}
+
+void Tcp::Endpoint::Deinitialize()
+{
+    GetDelackTimer().~TimerMilli();
+    GetRexmtPersistTimer().~TimerMilli();
+    GetKeepTimer().~TimerMilli();
+    Get2MslTimer().~TimerMilli();
+}
+
 Tcp::Tcp(Instance &aInstance)
     : InstanceLocator(aInstance)
+    , mEphemeralPort(kDynamicPortMin)
 {
 }
 
 Error Tcp::EndpointInitialize(Endpoint &aEndpoint, otTcpEndpointInitializeArgs &aArgs)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aArgs);
+    Error error = kErrorNone;
 
-    return kErrorNotImplemented;
+    aEndpoint.Initialize(GetInstance());
+
+    aEndpoint.mContext = aArgs.mContext;
+    aEndpoint.mEstablishedCallback = aArgs.mEstablishedCallback;
+    aEndpoint.mSendDoneCallback = aArgs.mSendDoneCallback;
+    aEndpoint.mSendReadyCallback = aArgs.mSendReadyCallback;
+    aEndpoint.mReceiveAvailableCallback = aArgs.mReceiveAvailableCallback;
+    aEndpoint.mDisconnectedCallback = aArgs.mDisconnectedCallback;
+
+    error = mEndpoints.Add(aEndpoint);
+
+    return error;
 }
 
 Error Tcp::SetEstablishedCallback(Endpoint &aEndpoint, otTcpEstablished aEstablishedCallback)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aEstablishedCallback);
-
-    return kErrorNotImplemented;
+    aEndpoint.mEstablishedCallback = aEstablishedCallback;
+    return kErrorNone;
 }
 
 Error Tcp::SetSendDoneCallback(Endpoint &aEndpoint, otTcpSendDone aSendDoneCallback)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aSendDoneCallback);
-
-    return kErrorNotImplemented;
+    aEndpoint.mSendDoneCallback = aSendDoneCallback;
+    return kErrorNone;
 }
 
 Error Tcp::SetSendReadyCallback(Endpoint &aEndpoint, otTcpSendReady aSendReadyCallback)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aSendReadyCallback);
-
-    return kErrorNotImplemented;
+    aEndpoint.mSendReadyCallback = aSendReadyCallback;
+    return kErrorNone;
 }
 
 Error Tcp::SetReceiveAvailableCallback(Endpoint &aEndpoint, otTcpReceiveAvailable aReceiveAvailableCallback)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aReceiveAvailableCallback);
-
-    return kErrorNotImplemented;
+    aEndpoint.mReceiveAvailableCallback = aReceiveAvailableCallback;
+    return kErrorNone;
 }
 
 Error Tcp::SetDisconnectedCallback(Endpoint &aEndpoint, otTcpDisconnected aDisconnectedCallback)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
-    OT_UNUSED_VARIABLE(aDisconnectedCallback);
-
-    return kErrorNotImplemented;
+    aEndpoint.mDisconnectedCallback = aDisconnectedCallback;
+    return kErrorNone;
 }
 
 Error Tcp::Bind(Endpoint &aEndpoint, const SockAddr &aSockName)
@@ -167,33 +187,42 @@ Error Tcp::Abort(Endpoint &aEndpoint)
 
 Error Tcp::EndpointDeinitialize(Endpoint &aEndpoint)
 {
-    OT_UNUSED_VARIABLE(aEndpoint);
+    Error    error;
+    Endpoint *prev;
 
-    return kErrorNotImplemented;
+    SuccessOrExit(error = mEndpoints.Find(aEndpoint, prev));
+    mEndpoints.PopAfter(prev);
+    aEndpoint.SetNext(nullptr);
+
+    aEndpoint.Deinitialize();
+
+exit:
+    return error;
 }
 
 Error Tcp::ListenerInitialize(Listener &aListener, otTcpListenerInitializeArgs &aArgs)
 {
-    OT_UNUSED_VARIABLE(aListener);
-    OT_UNUSED_VARIABLE(aArgs);
+    Error error = kErrorNone;
 
-    return kErrorNotImplemented;
+    aListener.mContext = aArgs.mContext;
+    aListener.mAcceptReadyCallback = aArgs.mAcceptReadyCallback;
+    aListener.mAcceptDoneCallback = aArgs.mAcceptDoneCallback;
+
+    error = mListeners.Add(aListener);
+
+    return error;
 }
 
 Error Tcp::SetAcceptReadyCallback(Listener &aListener, otTcpAcceptReady aAcceptReadyCallback)
 {
-    OT_UNUSED_VARIABLE(aListener);
-    OT_UNUSED_VARIABLE(aAcceptReadyCallback);
-
-    return kErrorNotImplemented;
+    aListener.mAcceptReadyCallback = aAcceptReadyCallback;
+    return kErrorNone;
 }
 
 Error Tcp::SetAcceptDoneCallback(Listener &aListener, otTcpAcceptDone aAcceptDoneCallback)
 {
-    OT_UNUSED_VARIABLE(aListener);
-    OT_UNUSED_VARIABLE(aAcceptDoneCallback);
-
-    return kErrorNotImplemented;
+    aListener.mAcceptDoneCallback = aAcceptDoneCallback;
+    return kErrorNone;
 }
 
 Error Tcp::Listen(Listener &aListener, const SockAddr &aSockName)
@@ -213,9 +242,15 @@ Error Tcp::StopListening(Listener &aListener)
 
 Error Tcp::ListenerDeinitialize(Listener &aListener)
 {
-    OT_UNUSED_VARIABLE(aListener);
+    Error    error;
+    Listener *prev;
 
-    return kErrorNotImplemented;
+    SuccessOrExit(error = mListeners.Find(aListener, prev));
+    mListeners.PopAfter(prev);
+    aListener.SetNext(nullptr);
+
+exit:
+    return error;
 }
 
 Error Tcp::ProcessReceivedSegment(Message &aMessage, MessageInfo &aMessageInfo)
@@ -223,7 +258,41 @@ Error Tcp::ProcessReceivedSegment(Message &aMessage, MessageInfo &aMessageInfo)
     OT_UNUSED_VARIABLE(aMessage);
     OT_UNUSED_VARIABLE(aMessageInfo);
 
-    return kErrorNotImplemented;
+    Error error = kErrorNotImplemented;
+
+    for (Endpoint *active = mEndpoints.GetHead(); active != nullptr; active = active->GetNext())
+    {
+    }
+
+    for (Listener *passive = mListeners.GetHead(); passive != nullptr; passive = passive->GetNext())
+    {
+    }
+
+    return error;
+}
+
+void Tcp::HandleDelackTimer(Timer &aTimer)
+{
+    TimerMilli &timer = *static_cast<TimerMilli *>(&aTimer);
+    OT_UNUSED_VARIABLE(timer);
+}
+
+void Tcp::HandleRexmtPersistTimer(Timer &aTimer)
+{
+    TimerMilli &timer = *static_cast<TimerMilli *>(&aTimer);
+    OT_UNUSED_VARIABLE(timer);
+}
+
+void Tcp::HandleKeepTimer(Timer &aTimer)
+{
+    TimerMilli &timer = *static_cast<TimerMilli *>(&aTimer);
+    OT_UNUSED_VARIABLE(timer);
+}
+
+void Tcp::Handle2MslTimer(Timer &aTimer)
+{
+    TimerMilli &timer = *static_cast<TimerMilli *>(&aTimer);
+    OT_UNUSED_VARIABLE(timer);
 }
 
 } // namespace Ip6
