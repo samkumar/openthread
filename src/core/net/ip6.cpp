@@ -948,7 +948,8 @@ exit:
     return error;
 }
 
-Error Ip6::HandlePayload(Message &          aMessage,
+Error Ip6::HandlePayload(Header &           aIp6Header,
+                         Message &          aMessage,
                          MessageInfo &      aMessageInfo,
                          uint8_t            aIpProto,
                          Message::Ownership aMessageOwnership)
@@ -956,7 +957,7 @@ Error Ip6::HandlePayload(Message &          aMessage,
     Error    error   = kErrorNone;
     Message *message = nullptr;
 
-    VerifyOrExit(aIpProto == kProtoUdp || aIpProto == kProtoIcmp6);
+    VerifyOrExit(aIpProto == kProtoTcp || aIpProto == kProtoUdp || aIpProto == kProtoIcmp6);
 
     switch (aMessageOwnership)
     {
@@ -972,7 +973,7 @@ Error Ip6::HandlePayload(Message &          aMessage,
     switch (aIpProto)
     {
     case kProtoTcp:
-        error = mTcp.ProcessReceivedSegment(*message, aMessageInfo);
+        error = mTcp.ProcessReceivedSegment(aIp6Header, *message, aMessageInfo);
         if (error == kErrorDrop)
         {
             otLogNoteIp6("Error TCP Checksum");
@@ -1247,7 +1248,7 @@ start:
             forwardHost = false;
         }
 
-        error             = HandlePayload(aMessage, messageInfo, nextHeader,
+        error             = HandlePayload(header, aMessage, messageInfo, nextHeader,
                               (forwardThread || forwardHost ? Message::kCopyToUse : Message::kTakeCustody));
         shouldFreeMessage = forwardThread || forwardHost;
     }
