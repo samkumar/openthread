@@ -70,6 +70,11 @@ public:
         friend class Tcp;
         friend class LinkedList<Endpoint>;
 
+        friend void ::tcplp_sys_set_timer(struct tcpcb* aTcb, uint8_t aTimerId, uint32_t aDelay);
+        friend void ::tcplp_sys_stop_timer(struct tcpcb* aTcb, uint8_t aTimerId);
+        friend void ::tcplp_sys_connection_lost(struct tcpcb* aTcb, uint8_t aErrNum);
+        friend void ::tcplp_sys_on_state_change(struct tcpcb* aTcb, int aNewState);
+
         enum : uint8_t
         {
             kNumTimers = 4,
@@ -78,6 +83,15 @@ public:
         static_assert(sizeof(mTimers[0]) >= sizeof(TimerMilli), "mTimers entries are too small");
         static_assert(OT_ARRAY_LENGTH(mTimers) == kNumTimers, "mTimers has an incorrect array length");
 
+    public:
+        static Endpoint &FromTcb(struct tcpcb &aTcb)
+        {
+            uint8_t *ptr = reinterpret_cast<uint8_t *>(&aTcb);
+            ptr -= offsetof(Endpoint, mTcb);
+            return *reinterpret_cast<Endpoint *>(ptr);
+        }
+
+    private:
         void Initialize(Instance &aInstance);
         void Deinitialize();
 
@@ -104,6 +118,28 @@ public:
 
         TimerMilli &Get2MslTimer() { return GetTimer(3); }
         static Endpoint &From2MslTimer(TimerMilli &aTimer) { return FromTimer(aTimer, 3); }
+
+        Address& GetLocalAddress()
+        {
+            return *reinterpret_cast<Address *>(&mTcb.laddr);
+        }
+
+        const Address& GetLocalAddress() const
+        {
+            return *reinterpret_cast<const Address *>(&mTcb.laddr);
+        }
+
+        Address& GetForeignAddress()
+        {
+            return *reinterpret_cast<Address *>(&mTcb.faddr);
+        }
+
+        const Address& GetForeignAddress() const
+        {
+            return *reinterpret_cast<const Address *>(&mTcb.faddr);
+        }
+
+        bool Matches(const MessageInfo &aMessageInfo) const;
     };
 
     /**
@@ -113,6 +149,27 @@ public:
     {
         friend class Tcp;
         friend class LinkedList<Listener>;
+
+    public:
+        static Listener &FromTcbListen(struct tcpcb_listen &aTcbListen)
+        {
+            uint8_t *ptr = reinterpret_cast<uint8_t *>(&aTcbListen);
+            ptr -= offsetof(Listener, mTcbListen);
+            return *reinterpret_cast<Listener *>(ptr);
+        }
+
+    private:
+        Address& GetLocalAddress()
+        {
+            return *reinterpret_cast<Address *>(&mTcbListen.laddr);
+        }
+
+        const Address& GetLocalAddress() const
+        {
+            return *reinterpret_cast<const Address *>(&mTcbListen.laddr);
+        }
+
+        bool Matches(const MessageInfo &aMessageInfo) const;
     };
 
     /**
@@ -332,7 +389,7 @@ public:
      * @retval kErrorDrop  Dropped the TCP segment due to an invalid checksum.
      *
      */
-    Error ProcessReceivedSegment(Message &aMessage, MessageInfo &aMessageInfo);
+    Error ProcessReceivedSegment(ot::Ip6::Header &aIp6Header, Message &aMessage, MessageInfo &aMessageInfo);
 
 private:
     enum
@@ -340,6 +397,11 @@ private:
         kDynamicPortMin = 49152, ///< Service Name and Transport Protocol Port Number Registry
         kDynamicPortMax = 65535, ///< Service Name and Transport Protocol Port Number Registry
     };
+
+    static void ProcessSignals(Endpoint &aSocket, uint8_t aSignals);
+
+    static Error BsdErrorToOtError(int aBsdError);
+    bool CanBind(const SockAddr &aSockName);
 
     static void HandleDelackTimer(Timer &aTimer);
     static void HandleRexmtPersistTimer(Timer &aTimer);

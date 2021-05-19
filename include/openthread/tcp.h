@@ -172,6 +172,8 @@ typedef struct otTcpEndpoint
     otTcpReceiveAvailable mReceiveAvailableCallback;  ///< "Receive available" callback function
     otTcpDisconnected mDisconnectedCallback;          ///< "Disconnected" callback function
 
+    otLinkedBuffer mReceiveLinks[2];
+
     union
     {
         void *mAlign;
