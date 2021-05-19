@@ -38,6 +38,7 @@
 #include "common/code_utils.hpp"
 #include "common/error.hpp"
 #include "common/instance.hpp"
+#include "common/logging.hpp"
 #include "net/checksum.hpp"
 #include "net/ip6.hpp"
 
@@ -163,7 +164,7 @@ const SockAddr &Tcp::GetPeerAddress(Endpoint &aEndpoint)
 Error Tcp::Bind(Endpoint &aEndpoint, const SockAddr &aSockName)
 {
     Error error;
-    VerifyOrExit(memcmp(&aSockName.mAddress, &in6addr_any, sizeof(aSockName.mAddress)) != 0, error = kErrorInvalidArgs);
+    VerifyOrExit(!static_cast<const Address *>(&aSockName.mAddress)->IsUnspecified(), error = kErrorInvalidArgs);
     VerifyOrExit(CanBind(aSockName), error = kErrorInvalidState);
 
     memcpy(&aEndpoint.mTcb.laddr, &aSockName.mAddress, sizeof(aEndpoint.mTcb.laddr));
@@ -446,7 +447,7 @@ bool Tcp::CanBind(const SockAddr &aSockName)
             {
                 return false;
             }
-            if (memcmp(&endpoint->mTcb.laddr, &in6addr_any, sizeof(endpoint->mTcb.laddr)) == 0)
+            if (reinterpret_cast<Address *>(&endpoint->mTcb.laddr)->IsUnspecified())
             {
                 return false;
             }
@@ -465,7 +466,7 @@ bool Tcp::CanBind(const SockAddr &aSockName)
             {
                 return false;
             }
-            if (memcmp(&listener->mTcbListen.laddr, &in6addr_any, sizeof(listener->mTcbListen.laddr)) == 0)
+            if (reinterpret_cast<Address *>(&listener->mTcbListen.laddr)->IsUnspecified())
             {
                 return false;
             }
@@ -684,6 +685,16 @@ const void *tcplp_sys_get_source_ipv6_address(otInstance* aInstance, const struc
     }
     const Address &address = netifAddress->GetAddress();
     return &address;
+}
+
+uint16_t tcplp_sys_hostswap16(uint16_t aHostPort)
+{
+    return HostSwap16(aHostPort);
+}
+
+uint32_t tcplp_sys_hostswap32(uint32_t aHostPort)
+{
+    return HostSwap32(aHostPort);
 }
 
 uint32_t tcplp_totalRexmitCnt = 0;
