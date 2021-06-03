@@ -38,6 +38,7 @@
 
 #include <openthread/tcp.h>
 
+#include "common/time.hpp"
 #include "utils/lookup_table.hpp"
 #include "utils/parse_cmdline.hpp"
 
@@ -87,6 +88,7 @@ private:
     otError ProcessBind(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessConnect(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessSend(uint8_t aArgsLength, Arg aArgs[]);
+    otError ProcessBenchmark(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessSendEnd(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessAbort(uint8_t aArgsLength, Arg aArgs[]);
     otError ProcessListen(uint8_t aArgsLength, Arg aArgs[]);
@@ -108,6 +110,7 @@ private:
 
     static constexpr Command sCommands[] = {
         {"abort", &TcpExample::ProcessAbort},
+        {"benchmark", &TcpExample::ProcessBenchmark},
         {"bind", &TcpExample::ProcessBind},
         {"connect", &TcpExample::ProcessConnect},
         {"deinit", &TcpExample::ProcessDeinit},
@@ -130,6 +133,11 @@ private:
     bool mListenerInitialized;
     bool mEndpointConnected;
     bool mSendBusy;
+
+    otLinkedBuffer mBenchmarkLinks[4];
+    uint32_t mBenchmarkBytesTotal;
+    uint32_t mBenchmarkLinksLeft;
+    TimeMilli mBenchmarkStart;
 
     otLinkedBuffer mSendLink;
     uint8_t mSendBuffer[1024];

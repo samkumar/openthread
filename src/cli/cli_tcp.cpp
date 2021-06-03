@@ -37,6 +37,7 @@
 
 #include "cli/cli.hpp"
 #include "common/encoding.hpp"
+#include "common/timer.hpp"
 
 namespace ot {
 namespace Cli {
@@ -49,6 +50,8 @@ TcpExample::TcpExample(Interpreter &aInterpreter)
     , mListenerInitialized(false)
     , mEndpointConnected(false)
     , mSendBusy(false)
+    , mBenchmarkBytesTotal(0)
+    , mBenchmarkLinksLeft(0)
 {
     memset(&mEndpoint, 0x00, sizeof(mEndpoint));
     memset(&mListener, 0x00, sizeof(mListener));
@@ -171,11 +174,12 @@ exit:
 
 otError TcpExample::ProcessSend(uint8_t aArgsLength, Arg aArgs[])
 {
-    otError        error;
+    otError error;
 
     VerifyOrExit(aArgsLength == 1, error = OT_ERROR_INVALID_ARGS);
     VerifyOrExit(mEndpointInitialized, error = OT_ERROR_INVALID_STATE);
     VerifyOrExit(!mSendBusy, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mBenchmarkBytesTotal == 0, error = OT_ERROR_INVALID_STATE);
 
     mSendLink.mNext = nullptr;
     mSendLink.mData = mSendBuffer;
@@ -186,6 +190,50 @@ otError TcpExample::ProcessSend(uint8_t aArgsLength, Arg aArgs[])
     mSendBusy = true;
 
 exit:
+    return error;
+}
+
+otError TcpExample::ProcessBenchmark(uint8_t aArgsLength, Arg aArgs[])
+{
+    otError  error;
+    uint32_t toSendOut;
+
+    VerifyOrExit(aArgsLength < 2, error = OT_ERROR_INVALID_ARGS);
+    VerifyOrExit(!mSendBusy, error = OT_ERROR_INVALID_STATE);
+    VerifyOrExit(mBenchmarkBytesTotal == 0, error = OT_ERROR_INVALID_STATE);
+
+    if (aArgsLength == 1)
+    {
+        SuccessOrExit(error = aArgs[0].ParseAsUint32(mBenchmarkBytesTotal));
+        VerifyOrExit(mBenchmarkBytesTotal != 0, error = OT_ERROR_INVALID_ARGS);
+    }
+    else
+    {
+        mBenchmarkBytesTotal = 72 << 10;
+    }
+
+    memset(mSendBuffer, 'a', sizeof(mSendBuffer));
+
+    mBenchmarkLinksLeft = (mBenchmarkBytesTotal + sizeof(mSendBuffer) - 1) / sizeof(mSendBuffer);
+    toSendOut = OT_MIN(OT_ARRAY_LENGTH(mBenchmarkLinks), mBenchmarkLinksLeft);
+    mBenchmarkStart = TimerMilli::GetNow();
+    for (uint32_t i = 0; i != toSendOut; i++)
+    {
+        mBenchmarkLinks[i].mNext = nullptr;
+        mBenchmarkLinks[i].mData = mSendBuffer;
+        mBenchmarkLinks[i].mLength = sizeof(mSendBuffer);
+        if (i == 0 && mBenchmarkBytesTotal % sizeof(mSendBuffer) != 0)
+        {
+            mBenchmarkLinks[i].mLength = mBenchmarkBytesTotal % sizeof(mSendBuffer);
+        }
+        SuccessOrExit(error = otTcpSendByReference(&mEndpoint, &mBenchmarkLinks[i], i == toSendOut - 1 ? 0 : OT_TCP_SEND_MORE_TO_COME));
+    }
+
+exit:
+    if (error != OT_ERROR_NONE)
+    {
+        mBenchmarkBytesTotal = 0;
+    }
     return error;
 }
 
@@ -308,10 +356,40 @@ void TcpExample::HandleTcpEstablished(otTcpEndpoint *aEndpoint)
 void TcpExample::HandleTcpSendDone(otTcpEndpoint *aEndpoint, otLinkedBuffer *aData)
 {
     OT_UNUSED_VARIABLE(aEndpoint);
-    OT_ASSERT(aData == &mSendLink);
-    OT_ASSERT(mSendBusy);
 
-    mSendBusy = false;
+    if (mBenchmarkBytesTotal == 0)
+    {
+        /*
+         * If the benchmark encountered an error, we might end up here. So,
+         * tolerate some benchmark links finishing in this case.
+         */
+        if (aData == &mSendLink)
+        {
+            OT_ASSERT(mSendBusy);
+            mSendBusy = false;
+        }
+    }
+    else
+    {
+        OT_ASSERT(aData != &mSendLink);
+        mBenchmarkLinksLeft--;
+        if (mBenchmarkLinksLeft >= OT_ARRAY_LENGTH(mBenchmarkLinks))
+        {
+            if (otTcpSendByReference(&mEndpoint, aData, 0) != OT_ERROR_NONE)
+            {
+                mInterpreter.OutputLine("TCP Benchmark Failed");
+                mBenchmarkBytesTotal = 0;
+            }
+        }
+        else if (mBenchmarkLinksLeft == 0)
+        {
+            uint32_t milliseconds = TimerMilli::GetNow() - mBenchmarkStart;
+            uint32_t thousandTimesGoodput = (1000 * (mBenchmarkBytesTotal << 3) + (milliseconds >> 1)) / milliseconds;
+            mInterpreter.OutputLine("TCP Benchmark Complete: Transferred %u bytes in %u milliseconds", (unsigned int) mBenchmarkBytesTotal, (unsigned int) milliseconds);
+            mInterpreter.OutputLine("TCP Goodput: %u.%03u kb/s", thousandTimesGoodput / 1000, thousandTimesGoodput % 1000);
+            mBenchmarkBytesTotal = 0;
+        }
+    }
 }
 
 void TcpExample::HandleTcpReceiveAvailable(otTcpEndpoint *aEndpoint, size_t aBytesAvailable, bool aEndOfStream, size_t aBytesRemaining)
@@ -365,12 +443,21 @@ void TcpExample::HandleTcpDisconnected(otTcpEndpoint *aEndpoint, otTcpDisconnect
     }
 
     /*
-    * We set this to false even for the TIME-WAIT state, so that we can reuse
+     * We set this to false even for the TIME-WAIT state, so that we can reuse
      * the active socket if an incoming connection comes in instead of waiting
      * for the 2MSL timeout.
      */
     mEndpointConnected = false;
     mSendBusy = false;
+
+    /*
+     * Mark the benchmark as inactive if the connction was disconnected.
+     */
+    if (mBenchmarkBytesTotal != 0)
+    {
+        mBenchmarkBytesTotal = 0;
+        mBenchmarkLinksLeft = 0;
+    }
 }
 
 otTcpIncomingConnectionAction TcpExample::HandleTcpAcceptReady(otTcpListener *aListener, const otSockAddr *aPeer, otTcpEndpoint **aAcceptInto)
